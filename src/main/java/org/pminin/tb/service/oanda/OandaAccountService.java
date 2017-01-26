@@ -8,8 +8,6 @@ import java.util.Optional;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.pminin.tb.constants.Constants;
 import org.pminin.tb.constants.Step;
 import org.pminin.tb.model.AccountDetails;
@@ -50,8 +48,6 @@ public class OandaAccountService implements AccountService {
 	private static final String INSTRUMENTS_API = "v1/instruments?accountId=%s&instruments=%s_%s";
 	private static final String CANDLES_API = "v1/candles?accountId=%s&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
 	private static final String CANDLES_API_COUNT = "v1/candles?accountId=%s&granularity=%s&instrument=%s&count=%d";
-
-	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd");
 
 	@Autowired
 	Logger logger;
@@ -108,7 +104,7 @@ public class OandaAccountService implements AccountService {
 		map.put("side", order.getSide());
 		map.put("type", Constants.TYPE_MARKETIFTOUCHED);
 		map.put("price", String.format("%.5f", order.getPrice()));
-		map.put("expiry", DATE_TIME_FORMATTER.print(DateTime.now().plusDays(2)));
+		map.put("expiry", String.valueOf(DateTime.now().plusDays(2).getMillis()));
 		map.put("stopLoss", String.format("%.5f", order.getStopLoss()));
 		map.put("takeProfit", String.format("%.5f", order.getTakeProfit()));
 		HttpEntity<Map<String, String>> entity = new HttpEntity<>(map, headers);

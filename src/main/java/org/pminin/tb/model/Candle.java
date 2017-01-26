@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Candle {
-	@JsonDeserialize(using = CustomJsonDateDeserializer.class)
+	@JsonDeserialize(using = UnixTimestampDeserializer.class)
 	private DateTime time;
 	private double openBid;
 	private double highBid;
@@ -65,22 +65,6 @@ public class Candle {
 
 	public void setBrokenDateTime(Date date) {
 		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
-	}
-
-	public static class CustomJsonDateDeserializer extends JsonDeserializer<DateTime> {
-		@Override
-		public DateTime deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
-				throws IOException, JsonProcessingException {
-
-			try {
-				String date = jsonparser.getText();
-				return new DateTime(Long.valueOf(date) / 1000, DateTimeZone.getDefault());
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-
-		}
-
 	}
 
 	@Data

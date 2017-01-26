@@ -2,6 +2,8 @@ package org.pminin.tb.model;
 
 import org.joda.time.DateTime;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,10 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class PostOrderResponse {
-
 	public boolean active = false;
 	private Instrument instrument;
 	private double price;
+	@JsonDeserialize(using = UnixTimestampDeserializer.class)
 	private DateTime time;
 	private Order orderOpened = null;;
 

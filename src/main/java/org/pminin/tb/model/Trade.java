@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.joda.time.DateTime;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,6 +26,7 @@ public class Trade {
 	private int units;
 	private String side;
 	private Instrument instrument;
+	@JsonDeserialize(using = UnixTimestampDeserializer.class)
 	private DateTime time;
 	private double price;
 	private double takeProfit;
