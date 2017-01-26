@@ -51,7 +51,7 @@ public class Scheduler implements Constants {
 			startWorkEveryDay();
 		} else {
 			try {
-				CronExpression expression = new CronExpression("${main.scheduler.start-work.cron}");
+				CronExpression expression = new CronExpression(config.getString("scheduler.start-work.cron"));
 				log.info("Start of work day is not forced. Trading will start at "
 						+ expression.getNextValidTimeAfter(new Date()));
 			} catch (ParseException e) {

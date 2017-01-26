@@ -2,7 +2,7 @@ package org.pminin.tb.constants;
 
 public interface Constants {
 
-	static final String ACTOR_PATH_HEAD = "akka://tb/u/";
+	static final String ACTOR_PATH_HEAD = "akka://TradingSystem/user/";
 
 	static final String COLLECTOR = "collector";
 	static final String ANALYZER = "analyzer";
