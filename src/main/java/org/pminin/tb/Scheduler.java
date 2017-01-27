@@ -41,23 +41,26 @@ public class Scheduler implements Constants {
 
 	@PostConstruct
 	public void fireInitialCollection() {
-		boolean forceStartOfDay = isTrue("forcestartofday") || isTrue("forcetrendlookup");
-		active = isTrue("autostart") || forceStartOfDay;
-		if (active) {
-			log.info("Autostart set to TRUE. Start collecting candles...");
-		}
-		if (forceStartOfDay) {
-			log.info("Start of work day is forced. Starting trading...");
-			startWorkEveryDay();
-		} else {
-			try {
-				CronExpression expression = new CronExpression(config.getString("scheduler.start-work.cron"));
-				log.info("Start of work day is not forced. Trading will start at "
-						+ expression.getNextValidTimeAfter(new Date()));
-			} catch (ParseException e) {
-				log.info("Something went wrong while parsing cron expression. I will not say when trading will start");
+		new ScheduledThreadPoolExecutor(1).schedule(() -> {
+			boolean forceStartOfDay = isTrue("forcestartofday") || isTrue("forcetrendlookup");
+			active = isTrue("autostart") || forceStartOfDay;
+			if (active) {
+				log.info("Autostart set to TRUE. Start collecting candles...");
 			}
-		}
+			if (forceStartOfDay) {
+				log.info("Start of work day is forced. Starting trading...");
+				startWorkEveryDay();
+			} else {
+				try {
+					CronExpression expression = new CronExpression(config.getString("scheduler.start-work.cron"));
+					log.info("Start of work day is not forced. Trading will start at "
+							+ expression.getNextValidTimeAfter(new Date()));
+				} catch (ParseException e) {
+					log.info(
+							"Something went wrong while parsing cron expression. I will not say when trading will start");
+				}
+			}
+		}, 15, TimeUnit.SECONDS);
 	}
 
 	@Scheduled(cron = "${main.scheduler.candle-collect.cron}")
@@ -74,8 +77,8 @@ public class Scheduler implements Constants {
 		if (!active || actorSystem == null) {
 			return;
 		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR).tell(Event.CHECK_TRADES_ORDERS,
-				actorSystem.guardian());
+		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR)
+				.tell(Event.CHECK_TRADES_ORDERS, actorSystem.guardian());
 	}
 
 	@Scheduled(cron = "${main.scheduler.pivot-collect.cron}")
@@ -98,6 +101,11 @@ public class Scheduler implements Constants {
 			actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.WORK,
 					actorSystem.guardian());
 		}, 15, TimeUnit.SECONDS);
+	}
+
+	public void resetState() {
+		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.TRADE_CLOSED,
+				actorSystem.guardian());
 	}
 
 	@Scheduled(cron = "${main.scheduler.end-work.cron}")

@@ -107,8 +107,10 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 
 	private void processBrokenFractal(FractalBroken brokenFractal) {
 		Candle fractal = brokenFractal.getBreakingCandle();
-		// check if directions are opposite ( -1 + 1 )
-		if (fractal.getDirection() != getMarketDirection()) {
+		if (fractal == null && Step.M30.equals(brokenFractal.getStep())) {
+			setBroke30M(fractal);
+		} else if (fractal.getDirection() != getMarketDirection()) {
+			// check if directions are opposite ( -1 + 1 )
 			switch (brokenFractal.getStep()) {
 			case M30:
 				setBroke30M(fractal);
@@ -202,19 +204,13 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 			}
 		case WAITING_FOR_TREND:
 			this.broken30M = broken30M;
-			brokenOpp5M = null;
-			confirmed5M = null;
-			confirmedOpp5M = null;
-			vLine = null;
-			rate = null;
-			order = new Order();
+			resetOrder();
 			state = broken30M == null ? State.INACTIVE : State.WAITING_FOR_VERTICAL_LINE;
-			if (broken30M != null) {
+			if (State.WAITING_FOR_VERTICAL_LINE.equals(state)) {
 				log.info("Got new market trend (" + (broken30M.getDirection() == DIRECTION_UP ? "up" : "down")
 						+ "). Waiting for vertical line...");
 			} else {
 				log.info("No trend defined. Closing the trading.");
-				resetState(false);
 				break;
 			}
 			reportState();
@@ -227,6 +223,16 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		default:
 			break;
 		}
+	}
+
+	private void resetOrder() {
+		brokenOpp5M = null;
+		confirmed5M = null;
+		confirmedOpp5M = null;
+		vLine = null;
+		rate = null;
+		order = new Order();
+		accountService.closeOrdersAndTrades(instrument);
 	}
 
 	private void setCurrentRate(Candle rate) {
@@ -266,7 +272,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		case WAITING_FOR_FRACTALS:
 			if (confirmedOpp5M == null || confirmedOpp5M.getTime().isBefore(brokenOpp5M.getTime())) {
 				this.confirmedOpp5M = brokenOpp5M;
-			} 
+			}
 			log.info("Opposite 5M fractal has broken.");
 			state = confirmed5M != null && brokenOpp5M != null && confirmedOpp5M != null ? State.TRADING : state;
 			this.brokenOpp5M = brokenOpp5M;
@@ -291,6 +297,11 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		case ORDER_POSTED:
 		case TRADE_OPENED:
 			this.confirmed5M = confirmed5M;
+			if (confirmed5M.getTime().isBefore(vLine.getTime())) {
+				vLine = confirmed5M;
+				Candle lastFractal = mainDao.getLastFractal(Step.M5, instrument, -confirmed5M.getDirection());
+				processConfirmedFractal(new FractalConfirmed(Step.M5, lastFractal));
+			}
 			reportState();
 			updateTraderState(StateChange.FRACTAL_CONFIRMED, confirmed5M);
 		default:
@@ -312,6 +323,9 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		case ORDER_POSTED:
 		case TRADE_OPENED:
 			this.confirmedOpp5M = confirmedOpp5M;
+			if (confirmedOpp5M.isBroken()) {
+				processBrokenFractal(new FractalBroken(Step.M5, confirmedOpp5M));
+			}
 			reportState();
 			updateTraderState(StateChange.OPP_FRACTAL_CONFIRMED, confirmedOpp5M);
 		default:
@@ -325,19 +339,17 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		boolean orderPosted = State.ORDER_POSTED.equals(state);
 		boolean trading = State.TRADING.equals(state) || orderPosted || hasOpenTrade;
 		if (trading) {
-			if (!orderPosted) {
+			if (!orderPosted && !hasOpenTrade) {
 				initOrder();
 			}
 			switch (change) {
 			case FRACTAL_CONFIRMED:
-				if (!hasOpenTrade) {
-					log.info("New fractal is confirmed. Updating pending order price...");
-					updateOrderPrice();
-				}
+				log.info("New fractal is confirmed. Updating pending order price...");
+				updateOrder();
 				break;
 			case OPP_FRACTAL_CONFIRMED:
 				log.info("New opposite fractal is confirmed. Updating order stop loss value...");
-				updateStopLoss();
+				updateOrder();
 				break;
 			case TREND_CHANGED:
 				resetState(true);
@@ -353,13 +365,13 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		if (!State.INACTIVE.equals(state)) {
 			log.info("Resetting state: closing trades and orders and looking for the last broken 30M fractal...");
 			if (State.TRADE_OPENED.equals(state) || State.ORDER_POSTED.equals(state)) {
-				accountService.closeOrdersAndTrades(instrument);
+				resetOrder();
 			}
 			state = State.WAITING_FOR_TREND;
 			if (lookForNewTrend) {
 				lookForTrend();
 			} else {
-				setBroke30M(null);
+				processBrokenFractal(new FractalBroken(Step.M30, null));
 			}
 		}
 	}
@@ -374,9 +386,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		double balance = accountService.getAccountDetails().getBalance();
 		order.setUnits((int) (balance / 100 * 1000));
 		log.info("Order units is set to " + order.getUnits());
-		updateOrderPrice();
-		updateStopLoss();
-		System.out.println();
+		updateOrder();
 		order = accountService.createOrder(order);
 		if (order != null) {
 			state = State.ORDER_POSTED;
@@ -385,39 +395,45 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		}
 	}
 
-	private void updateStopLoss() {
-		double stopLoss = 0;
+	private void updateOrder() {
 		int direction = getMarketDirection();
-		Candle confirmedOpp5M = mainDao.getLastFractal(Step.M5, instrument, -getMarketDirection());
-		if (direction == DIRECTION_UP) {
-			stopLoss = confirmedOpp5M.getLowAsk();
-		} else if (direction == DIRECTION_DOWN) {
-			stopLoss = confirmedOpp5M.getHighAsk();
-		} else {
-			return;
-		}
-		stopLoss += 0.00030 * (-direction);
+		double stopLoss = getOrderStopLoss();
+		double price = getOrderPrice();
 		if (State.TRADE_OPENED.equals(state)) {
 			if (openedTrade.getStopLoss() == 0 || stopLoss * direction > openedTrade.getStopLoss() * direction) {
 				openedTrade.setStopLoss(stopLoss);
 				log.info("Order stop loss is set to " + stopLoss);
+				if (accountService.updateTrade(openedTrade) == null) {
+					log.info("A problem occurred during updating the trade. Resetting state...");
+					resetState(true);
+				}
 			} else {
 				log.info(String.format("Stop loss is %.5f. New stop loss %.5f will not be set",
 						openedTrade.getStopLoss(), stopLoss));
 			}
-			if (accountService.updateTrade(openedTrade) == null) {
-				log.info("A problem occurred during updating the trade. Resetting state...");
-				resetState(true);
-			}
 		} else {
-			if (order.getStopLoss() == 0 || stopLoss * direction > order.getStopLoss() * direction) {
-				order.setStopLoss(stopLoss);
-				log.info("Order stop loss is set to " + stopLoss);
-			} else {
-				log.info(String.format("Stop loss is %.5f. New stop loss %.5f will not be set", order.getStopLoss(),
-						stopLoss));
+			boolean changed = false;
+			if (order.getPrice() != price) {
+				order.setPrice(price);
+				changed = true;
+				log.info("Order new price is set to " + price);
+				Pivot lastPivot = mainDao.getLastPivot(instrument);
+				double takeProfit = lastPivot.getNearestWithMiddle(price, getMarketDirection());
+				if (order.getTakeProfit() != takeProfit) {
+					order.setTakeProfit(takeProfit);
+					log.info("Order new take profit is set to " + takeProfit);
+				}
 			}
-			if (State.ORDER_POSTED.equals(state)) {
+			if (order.getPrice() * direction > stopLoss * direction
+					&& (order.getStopLoss() == 0 || stopLoss * direction > order.getStopLoss() * direction)) {
+				order.setStopLoss(stopLoss);
+				changed = true;
+				log.info("New order stop loss is set to " + stopLoss);
+			} else {
+				log.info(String.format("Order price is %.5f and stop loss is %.5f. New stop loss %.5f will not be set",
+						order.getPrice(), order.getStopLoss(), stopLoss));
+			}
+			if (changed && State.ORDER_POSTED.equals(state)) {
 				if (accountService.updateOrder(order) == null) {
 					log.info("A problem occurred during updating the trade. Resetting state...");
 					resetState(true);
@@ -426,20 +442,17 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		}
 	}
 
-	private void updateOrderPrice() {
-		double price = getOrderPrice();
-		order.setPrice(price);
-		log.info("Order new price is set to " + price);
-		Pivot lastPivot = mainDao.getLastPivot(instrument);
-		double takeProfit = lastPivot.getNearestNoMiddle(price, getMarketDirection());
-		order.setTakeProfit(takeProfit);
-		log.info("Order new take profit is set to " + takeProfit);
-		if (State.ORDER_POSTED.equals(state)) {
-			if (accountService.updateOrder(order) == null) {
-				log.info("A problem occurred during updating the trade. Resetting state...");
-				resetState(true);
-			}
+	private double getOrderStopLoss() {
+		double stopLoss = 0;
+		int direction = getMarketDirection();
+		Candle confirmedOpp5M = mainDao.getLastFractal(Step.M5, instrument, -getMarketDirection());
+		if (direction == DIRECTION_UP) {
+			stopLoss = confirmedOpp5M.getLowAsk();
+		} else if (direction == DIRECTION_DOWN) {
+			stopLoss = confirmedOpp5M.getHighAsk();
 		}
+		stopLoss += 0.00030 * (-direction);
+		return stopLoss;
 	}
 
 	private double getOrderPrice() {

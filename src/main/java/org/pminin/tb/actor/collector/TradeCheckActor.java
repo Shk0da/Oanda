@@ -44,13 +44,6 @@ public class TradeCheckActor extends AbstractInstrumentActor {
 				tradeEvent = Event.TRADE_CLOSED;
 			}
 		}
-		if (orderEvent != null && tradeEvent == null) {
-			getContext().actorSelection(ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + STRATEGY).tell(orderEvent,
-					self());
-		} else if (tradeEvent != null) {
-			getContext().actorSelection(ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + STRATEGY).tell(tradeEvent,
-					self());
-		}
 		if (tradeEvent != null) {
 			getContext().actorSelection(ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + STRATEGY).tell(tradeEvent,
 					self());

@@ -35,7 +35,7 @@ public class StepCollectorActor extends StepActor {
 	@Override
 	public void onReceive(Object arg0) throws Exception {
 		DateTime start = lastCandle != null ? lastCandle.getTime()
-				: DateTime.now(DateTimeZone.getDefault()).minusHours(12);
+				: DateTime.now(DateTimeZone.getDefault()).minusHours(36);
 		Candles candles = accountService.getCandles(step, start, instrument);
 		Candle cndl = collectorDao.insertCandles(candles);
 		if (cndl != null) {

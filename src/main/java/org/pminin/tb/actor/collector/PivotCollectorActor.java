@@ -28,7 +28,7 @@ public class PivotCollectorActor extends AbstractInstrumentActor {
 		Pivot pivot = accountService.getPivot(instrument);
 		if (pivot != null) {
 			Pivot lastPivot = collectorDao.getLastPivot(instrument);
-			if (lastPivot == null || pivot.getTime().isAfter(lastPivot.getTime())) {
+			if (lastPivot == null || lastPivot.getTime() == null || pivot.getTime().isAfter(lastPivot.getTime())) {
 				int cnt = collectorDao.insertPivot(pivot, instrument);
 				if (cnt > 0) {
 					getContext().actorSelection(analyzerActorUrl()).tell(new Event.PivotChanged(pivot), self());

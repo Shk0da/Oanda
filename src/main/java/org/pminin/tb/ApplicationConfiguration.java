@@ -28,8 +28,6 @@ public class ApplicationConfiguration {
 
 	private static final Config config = ConfigFactory.load();
 
-	Scheduler scheduler;
-
 	@Bean(name = "accountService")
 	public AccountService accountService() {
 		AccountService svc = (AccountService) applicationContext.getBean(AccountService.provider);
@@ -40,8 +38,7 @@ public class ApplicationConfiguration {
 	public ActorSystem actorSytem() {
 
 		ApplicationContextProvider.setApplicationContext(applicationContext);
-		ActorSystem system;
-		system = ActorSystem.create("TradingSystem", config.getConfig("main").withFallback(config));
+		ActorSystem system = ActorSystem.create("TradingSystem", config.getConfig("main").withFallback(config));
 		Config pairsCfg = config.getConfig("pairs");
 
 		for (String key : pairsCfg.root().keySet()) {

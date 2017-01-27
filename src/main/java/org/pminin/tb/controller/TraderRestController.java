@@ -44,6 +44,9 @@ public class TraderRestController {
 			return createOrder();
 		case "account":
 			return getAccountDetails();
+		case "reset":
+			scheduler.resetState();
+			return "resetting state...";
 		default:
 			return "Incorrect command";
 		}

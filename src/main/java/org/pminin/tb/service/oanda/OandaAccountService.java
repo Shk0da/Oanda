@@ -83,12 +83,18 @@ public class OandaAccountService implements AccountService {
 	@Override
 	public void closeOrdersAndTrades(Instrument instrument) {
 		Orders orders = getOrders(instrument);
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + cfg.getString("token"));
+		headers.set("X-Accept-Datetime-Format", "UNIX");
+		headers.set("X-HTTP-Method-Override", "DELETE");
+		HttpEntity<Object> entity = new HttpEntity<>(headers);
+
 		orders.getOrders().stream().forEach(order -> {
-			getResponse(updateOrderUrl(order), HttpMethod.DELETE, headers(), Order.class);
+			getResponse(updateOrderUrl(order), HttpMethod.POST, entity, Order.class);
 		});
 		Trades trades = getTrades(instrument);
 		trades.getTrades().stream().forEach(trade -> {
-			getResponse(updateTradeUrl(trade), HttpMethod.DELETE, headers(), Trade.class);
+			getResponse(updateTradeUrl(trade), HttpMethod.POST, entity, Trade.class);
 		});
 	}
 
@@ -252,11 +258,12 @@ public class OandaAccountService implements AccountService {
 		headers.set("Authorization", "Bearer " + cfg.getString("token"));
 		headers.set("Content-Type", "application/x-www-form-urlencoded");
 		headers.set("X-Accept-Datetime-Format", "UNIX");
+		headers.set("X-HTTP-Method-Override", "PATCH");
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("stopLoss", String.format("%.5f", order.getStopLoss()));
 		map.put("price", String.format("%.5f", order.getPrice()));
 		HttpEntity<Object> entity = new HttpEntity<>(map, headers);
-		Optional<Order> response = getResponse(updateOrderUrl(order), HttpMethod.PATCH, entity, Order.class);
+		Optional<Order> response = getResponse(updateOrderUrl(order), HttpMethod.POST, entity, Order.class);
 		return response.orElse(null);
 	}
 
@@ -270,10 +277,11 @@ public class OandaAccountService implements AccountService {
 		headers.set("Authorization", "Bearer " + cfg.getString("token"));
 		headers.set("Content-Type", "application/x-www-form-urlencoded");
 		headers.set("X-Accept-Datetime-Format", "UNIX");
+		headers.set("X-HTTP-Method-Override", "PATCH");
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("stopLoss", String.format("%.5f", trade.getStopLoss()));
 		HttpEntity<Object> entity = new HttpEntity<>(map, headers);
-		Optional<Trade> response = getResponse(updateTradeUrl(trade), HttpMethod.PATCH, entity, Trade.class);
+		Optional<Trade> response = getResponse(updateTradeUrl(trade), HttpMethod.POST, entity, Trade.class);
 		return response.orElse(null);
 	}
 
