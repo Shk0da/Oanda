@@ -1,12 +1,8 @@
 SELECT "time" ,	
-	openBid,
-	highBid,
-	lowBid,
-	closeBid,
-	openAsk,
-	highAsk,
-	lowAsk,
-	closeAsk,
+	openMid,
+	highMid,
+	lowMid,
+	closeMid,
 	volume ,
 	complete 			
 FROM %CANDLES%_%INSTRUMENT%_%STEP%

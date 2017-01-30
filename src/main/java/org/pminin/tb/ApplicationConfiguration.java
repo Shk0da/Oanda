@@ -23,12 +23,12 @@ import akka.actor.Props;
 @Configuration
 @EnableScheduling
 public class ApplicationConfiguration {
+	private static final Config config = ConfigFactory.load();
 	@Autowired
 	private ApplicationContext applicationContext;
+
 	@Autowired
 	private InstrumentStorage storage;
-
-	private static final Config config = ConfigFactory.load();
 
 	@Bean(name = "accountService")
 	public AccountService accountService() {

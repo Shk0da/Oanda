@@ -15,6 +15,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class Order {
+	@AllArgsConstructor
+	@NoArgsConstructor
+	@Data
+	public static class Orders {
+		List<Order> orders = new ArrayList<>();
+	}
 	private String id;
 	private String instrument;
 	private int units;
@@ -27,12 +33,6 @@ public class Order {
 	private DateTime expiry;
 	private double upperBound;
 	private double lowerBound;
-	private double trailingStop;
 
-	@AllArgsConstructor
-	@NoArgsConstructor
-	@Data
-	public static class Orders {
-		List<Order> orders = new ArrayList<>();
-	}
+	private double trailingStop;
 }

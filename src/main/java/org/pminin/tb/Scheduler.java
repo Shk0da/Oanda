@@ -23,24 +23,43 @@ import akka.actor.ActorSystem;
 @Component(value = "scheduler")
 public class Scheduler implements Constants {
 
-	private ActorSystem actorSystem;
 	protected static final Config config = ConfigFactory.load().getConfig("main");
-	private boolean active = false;
-	private boolean forceStartOfDay = true;
-
 	private static final Logger log = LoggerFactory.getLogger(Scheduler.class);
+	private ActorSystem actorSystem;
+	private boolean active = false;
+
+	private boolean forceStartOfDay = true;
 
 	@Autowired
 	public Scheduler(ActorSystem actorSystem) {
 		this.actorSystem = actorSystem;
 	}
 
-	private boolean isTrue(String path) {
-		return config.hasPath(path) && config.getBoolean(path);
+	@Scheduled(cron = "${main.scheduler.trade-check.cron}")
+	public void fireCheckTrades() {
+		if (!active || actorSystem == null) {
+			return;
+		}
+		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR)
+				.tell(Event.CHECK_TRADES_ORDERS, actorSystem.guardian());
 	}
 
-	private boolean isNotFalse(String path) {
-		return !config.hasPath(path) || config.getBoolean(path);
+	@Scheduled(cron = "${main.scheduler.candle-collect.cron}")
+	public void fireCollectCandles() {
+		if (!active || actorSystem == null) {
+			return;
+		}
+		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR).tell(Event.COLLECT_CANDLES,
+				actorSystem.guardian());
+	}
+
+	@Scheduled(cron = "${main.scheduler.pivot-collect.cron}")
+	public void fireCollectPivot() {
+		if (!active || actorSystem == null) {
+			return;
+		}
+		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR).tell(Event.COLLECT_PIVOT,
+				actorSystem.guardian());
 	}
 
 	@PostConstruct
@@ -63,30 +82,27 @@ public class Scheduler implements Constants {
 		}, 15, TimeUnit.SECONDS);
 	}
 
-	@Scheduled(cron = "${main.scheduler.candle-collect.cron}")
-	public void fireCollectCandles() {
+	@Scheduled(cron = "${main.scheduler.forced-work.cron}")
+	public void forceStart() {
 		if (!active || actorSystem == null) {
 			return;
 		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR).tell(Event.COLLECT_CANDLES,
-				actorSystem.guardian());
+		if (forceStartOfDay) {
+			forceStartOfDay = false;
+			startWorkEveryDay();
+		}
 	}
 
-	@Scheduled(cron = "${main.scheduler.trade-check.cron}")
-	public void fireCheckTrades() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR)
-				.tell(Event.CHECK_TRADES_ORDERS, actorSystem.guardian());
+	private boolean isNotFalse(String path) {
+		return !config.hasPath(path) || config.getBoolean(path);
 	}
 
-	@Scheduled(cron = "${main.scheduler.pivot-collect.cron}")
-	public void fireCollectPivot() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR).tell(Event.COLLECT_PIVOT,
+	private boolean isTrue(String path) {
+		return config.hasPath(path) && config.getBoolean(path);
+	}
+
+	public void resetState() {
+		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.TRADE_CLOSED,
 				actorSystem.guardian());
 	}
 
@@ -101,22 +117,6 @@ public class Scheduler implements Constants {
 			actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.WORK,
 					actorSystem.guardian());
 		}, 15, TimeUnit.SECONDS);
-	}
-
-	@Scheduled(cron = "${main.scheduler.forced-work.cron}")
-	public void forceStart() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		if (forceStartOfDay) {
-			forceStartOfDay = false;
-			startWorkEveryDay();
-		}
-	}
-
-	public void resetState() {
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.TRADE_CLOSED,
-				actorSystem.guardian());
 	}
 
 	@Scheduled(cron = "${main.scheduler.end-work.cron}")

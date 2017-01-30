@@ -18,7 +18,7 @@ public class AnalyzerActor extends AbstractInstrumentActor {
 
 	private ActorRef fractalAnalyzerM5;
 	private ActorRef fractalAnalyzerM30;
-	
+
 	@Autowired
 	private StrategySteps steps;
 
@@ -39,7 +39,8 @@ public class AnalyzerActor extends AbstractInstrumentActor {
 	@Override
 	public void preStart() throws Exception {
 		fractalAnalyzerM5 = getContext().actorOf(
-				Props.create(SpringDIActor.class, CandleAnalyzerActor.class, instrument, steps.tradingStep()), steps.tradingStep().toString());
+				Props.create(SpringDIActor.class, CandleAnalyzerActor.class, instrument, steps.tradingStep()),
+				steps.tradingStep().toString());
 		fractalAnalyzerM30 = getContext().actorOf(
 				Props.create(SpringDIActor.class, CandleAnalyzerActor.class, instrument, steps.trendStep()),
 				steps.trendStep().toString());

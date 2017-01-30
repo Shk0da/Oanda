@@ -20,7 +20,7 @@ public class CollectorActor extends AbstractInstrumentActor {
 	private ActorRef m30Collector;
 	private ActorRef m5Collector;
 	private ActorRef tradeChecker;
-	
+
 	@Autowired
 	private StrategySteps steps;
 
@@ -44,9 +44,11 @@ public class CollectorActor extends AbstractInstrumentActor {
 	@Override
 	public void preStart() throws Exception {
 		m5Collector = getContext().actorOf(
-				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, steps.tradingStep()), steps.tradingStep().toString());
+				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, steps.tradingStep()),
+				steps.tradingStep().toString());
 		m30Collector = getContext().actorOf(
-				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, steps.trendStep()), steps.trendStep().toString());
+				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, steps.trendStep()),
+				steps.trendStep().toString());
 		pivotCollector = getContext().actorOf(Props.create(SpringDIActor.class, PivotCollectorActor.class, instrument),
 				PIVOT);
 		tradeChecker = getContext().actorOf(Props.create(SpringDIActor.class, TradeCheckActor.class, instrument),

@@ -12,13 +12,13 @@ import org.springframework.stereotype.Repository;
 public class InstrumentStorage {
 
 	private final Map<String, Instrument> instruments = new HashMap<String, Instrument>();
-	
+
 	@Autowired
 	AccountService accountService;
-	
+
 	public Instrument getInstrument(String instrument) {
 		Instrument result = instruments.get(instrument);
-		if (result == null){
+		if (result == null) {
 			result = updateInstrument(instrument);
 		}
 		return result;
@@ -30,6 +30,5 @@ public class InstrumentStorage {
 		instruments.put(instrument, result);
 		return result;
 	}
-	
-	
+
 }

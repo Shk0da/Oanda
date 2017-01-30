@@ -22,26 +22,8 @@ public class TraderRestController {
 	private Scheduler scheduler;
 	@Autowired
 	private Environment env;
-//	@Autowired
-//	private InstrumentStorage storage;
-
-	public String getAccountDetails() {
-		return "<p>" + accountService.getAccountDetails().toString() + "</p>";
-	}
-
-	private String createOrder() {
-		Order order = new Order();
-		order.setInstrument("EUR_USD");
-
-		order.setSide("buy");
-		double balance = accountService.getAccountDetails().getBalance();
-		order.setUnits((int) (balance / 100 * 1000));
-		order.setPrice(1.073);
-		order.setTakeProfit(1.075);
-		order.setStopLoss(1.070);
-		order = accountService.createOrder(order);
-		return order != null ? order.getId() : "Error occured during order creation";
-	}
+	// @Autowired
+	// private InstrumentStorage storage;
 
 	@RequestMapping("/{command}")
 	public String command(@PathVariable String command) {
@@ -67,6 +49,24 @@ public class TraderRestController {
 		default:
 			return "Incorrect command";
 		}
+	}
+
+	private String createOrder() {
+		Order order = new Order();
+		order.setInstrument("EUR_USD");
+
+		order.setSide("buy");
+		double balance = accountService.getAccountDetails().getBalance();
+		order.setUnits((int) (balance / 100 * 1000));
+		order.setPrice(1.073);
+		order.setTakeProfit(1.075);
+		order.setStopLoss(1.070);
+		order = accountService.createOrder(order);
+		return order != null ? order.getId() : "Error occured during order creation";
+	}
+
+	public String getAccountDetails() {
+		return "<p>" + accountService.getAccountDetails().toString() + "</p>";
 	}
 
 }

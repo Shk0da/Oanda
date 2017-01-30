@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StrategySteps {
-	private Step trendStep;
-	private Step tradingStep;
-
 	private static final Logger log = LoggerFactory.getLogger(StrategySteps.class);
+	private Step trendStep;
+
+	private Step tradingStep;
 
 	@Autowired
 	public StrategySteps(@Value("${main.trendStep}") String trendStep,
