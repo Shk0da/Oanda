@@ -23,10 +23,6 @@ public class Instrument {
 
 	private double maxTradeUnits;
 
-	public Instrument(String instrument) {
-		this(instrument, instrument, 0.0001, 10000000);
-	}
-
 	@Override
 	public String toString() {
 		return instrument;

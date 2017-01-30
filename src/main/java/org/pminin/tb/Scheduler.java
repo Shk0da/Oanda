@@ -1,6 +1,5 @@
 package org.pminin.tb;
 
-import java.text.ParseException;
 import java.util.Date;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +26,7 @@ public class Scheduler implements Constants {
 	private ActorSystem actorSystem;
 	protected static final Config config = ConfigFactory.load().getConfig("main");
 	private boolean active = false;
+	private boolean forceStartOfDay = true;
 
 	private static final Logger log = LoggerFactory.getLogger(Scheduler.class);
 
@@ -39,26 +39,26 @@ public class Scheduler implements Constants {
 		return config.hasPath(path) && config.getBoolean(path);
 	}
 
+	private boolean isNotFalse(String path) {
+		return !config.hasPath(path) || config.getBoolean(path);
+	}
+
 	@PostConstruct
 	public void fireInitialCollection() {
 		new ScheduledThreadPoolExecutor(1).schedule(() -> {
-			boolean forceStartOfDay = isTrue("forcestartofday") || isTrue("forcetrendlookup");
+
+			forceStartOfDay = isNotFalse("forcestartofday");
 			active = isTrue("autostart") || forceStartOfDay;
 			if (active) {
 				log.info("Autostart set to TRUE. Start collecting candles...");
 			}
-			if (forceStartOfDay) {
-				log.info("Start of work day is forced. Starting trading...");
-				startWorkEveryDay();
-			} else {
-				try {
-					CronExpression expression = new CronExpression(config.getString("scheduler.start-work.cron"));
-					log.info("Start of work day is not forced. Trading will start at "
-							+ expression.getNextValidTimeAfter(new Date()));
-				} catch (ParseException e) {
-					log.info(
-							"Something went wrong while parsing cron expression. I will not say when trading will start");
-				}
+			try {
+				CronExpression expression = new CronExpression(
+						forceStartOfDay ? config.getString("scheduler.forced-work.cron")
+								: config.getString("scheduler.start-work.cron"));
+				log.info("Trading will start at " + expression.getNextValidTimeAfter(new Date()));
+			} catch (Exception e) {
+				log.info("Something went wrong while parsing cron expression. I will not say when trading will start");
 			}
 		}, 15, TimeUnit.SECONDS);
 	}
@@ -101,6 +101,17 @@ public class Scheduler implements Constants {
 			actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.WORK,
 					actorSystem.guardian());
 		}, 15, TimeUnit.SECONDS);
+	}
+
+	@Scheduled(cron = "${main.scheduler.forced-work.cron}")
+	public void forceStart() {
+		if (!active || actorSystem == null) {
+			return;
+		}
+		if (forceStartOfDay) {
+			forceStartOfDay = false;
+			startWorkEveryDay();
+		}
 	}
 
 	public void resetState() {

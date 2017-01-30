@@ -28,6 +28,8 @@ public interface AccountService {
 	Candles getCandles(Step step, DateTime start, Instrument instrument);
 
 	Instrument getInstrument(String left, String right);
+	
+	Instrument getInstrument(String pair);
 
 	Orders getOrders(Instrument instrument);
 

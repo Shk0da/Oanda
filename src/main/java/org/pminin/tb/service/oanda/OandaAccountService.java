@@ -46,6 +46,7 @@ public class OandaAccountService implements AccountService {
 	private static final String ACCOUNT_DETAILS_API = "v1/accounts/%s";
 
 	private static final String INSTRUMENTS_API = "v1/instruments?accountId=%s&instruments=%s_%s";
+	private static final String INSTRUMENTS_API_1 = "v1/instruments?accountId=%s&instruments=%s";
 	private static final String CANDLES_API = "v1/candles?accountId=%s&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
 	private static final String CANDLES_API_COUNT = "v1/candles?accountId=%s&granularity=%s&instrument=%s&count=%d";
 
@@ -108,7 +109,7 @@ public class OandaAccountService implements AccountService {
 		map.put("instrument", order.getInstrument().toString());
 		map.put("units", String.valueOf(order.getUnits()));
 		map.put("side", order.getSide());
-		map.put("type", Constants.TYPE_MARKETIFTOUCHED);
+		map.put("type", Constants.TYPE_LIMIT);
 		map.put("price", String.format("%.5f", order.getPrice()));
 		map.put("expiry", String.valueOf(DateTime.now().plusDays(2).getMillis()));
 		map.put("stopLoss", String.format("%.5f", order.getStopLoss()));
@@ -128,7 +129,7 @@ public class OandaAccountService implements AccountService {
 	private Candles getCandles(Step step, DateTime start, DateTime end, Instrument instrument, boolean includeFirst) {
 		String candlesUrl = candlesUrl(step, start, end, instrument, includeFirst);
 		Optional<Candles> candles = getResponse(candlesUrl, HttpMethod.GET, headers(), Candles.class);
-		return candles.orElse(new Candles(instrument, step, new ArrayList<Candle>()));
+		return candles.orElse(new Candles(instrument.toString(), step, new ArrayList<Candle>()));
 	}
 
 	@Override
@@ -146,6 +147,18 @@ public class OandaAccountService implements AccountService {
 	@Override
 	public Instrument getInstrument(String left, String right) {
 		Optional<Instruments> response = getResponse(instrumentsUrl(left, right), HttpMethod.GET, headers(),
+				Instruments.class);
+		if (response.isPresent()) {
+			List<Instrument> instruments = response.get().getInstruments();
+			return instruments.stream().findFirst().orElse(null);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public Instrument getInstrument(String pair) {
+		Optional<Instruments> response = getResponse(instrumentsUrl(pair), HttpMethod.GET, headers(),
 				Instruments.class);
 		if (response.isPresent()) {
 			List<Instrument> instruments = response.get().getInstruments();
@@ -189,7 +202,7 @@ public class OandaAccountService implements AccountService {
 				double m2 = (pp + s1) / 2;
 				double m1 = (s1 + s2) / 2;
 				double m0 = (s2 + s3) / 2;
-				return new Pivot(pivotCandle.getTime(), r3, r2, r1, pp, s1, s2, s3, m0, m1, m2, m3, m4, m5);
+				return new Pivot(pivotCandle.getTime(), instrument, r3, r2, r1, pp, s1, s2, s3, m0, m1, m2, m3, m4, m5);
 			}
 		} catch (Exception e) {
 			logger.error("Could not get pivot points", e);
@@ -212,7 +225,7 @@ public class OandaAccountService implements AccountService {
 				}
 			}
 		} catch (HttpStatusCodeException e) {
-			logger.error("Could not get response from " + url, e);
+			logger.error("Could not get response from " + url);
 			logger.error(e.getResponseBodyAsString());
 		} catch (RestClientException e) {
 			logger.error("Could not get response from " + url, e);
@@ -243,6 +256,10 @@ public class OandaAccountService implements AccountService {
 
 	private String instrumentsUrl(String left, String right) {
 		return apiUrl() + String.format(INSTRUMENTS_API, accountId(), left, right);
+	}
+
+	private String instrumentsUrl(String pair) {
+		return apiUrl() + String.format(INSTRUMENTS_API_1, accountId(), pair);
 	}
 
 	private String ordersUrl() {

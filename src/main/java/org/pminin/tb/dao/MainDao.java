@@ -18,6 +18,7 @@ import javax.sql.DataSource;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.pminin.tb.StrategySteps;
 import org.pminin.tb.constants.Step;
 import org.pminin.tb.model.Candle;
 import org.pminin.tb.model.Candle.Candles;
@@ -39,6 +40,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository("mainDao")
 public class MainDao {
+	
+	@Autowired 
+	private StrategySteps steps;
 
 	private static final String PH_INSTRUMENT = "%INSTRUMENT%";
 	private static final String PH_STEP = "%STEP%";
@@ -148,10 +152,10 @@ public class MainDao {
 	}
 
 	public void createTables(Instrument instrument) throws IOException {
-		createCandlesTable(Step.M5, instrument);
-		createCandlesTable(Step.M30, instrument);
-		createFractalsTable(Step.M5, instrument);
-		createFractalsTable(Step.M30, instrument);
+		createCandlesTable(steps.tradingStep(), instrument);
+		createCandlesTable(steps.trendStep(), instrument);
+		createFractalsTable(steps.tradingStep(), instrument);
+		createFractalsTable(steps.trendStep(), instrument);
 		createPivotTable(instrument);
 		createOrdersTable(instrument);
 	}
@@ -241,13 +245,16 @@ public class MainDao {
 	public Pivot getLastPivot(Instrument instrument) {
 		String script = getLastPivotScript.replaceAll(PH_INSTRUMENT, instrument.toString()).replaceAll(PH_PIVOT,
 				PIVOT_PREFIX);
+		Pivot pivot = new Pivot();
+		pivot.setInstrument(instrument);
 		try {
-			Pivot pivot = jdbcTemplate.queryForObject(script, new RowMapper<Pivot>() {
+			pivot = jdbcTemplate.queryForObject(script, new RowMapper<Pivot>() {
 
 				@Override
 				public Pivot mapRow(ResultSet rs, int rowNum) throws SQLException {
 					Pivot pivot = new Pivot();
 					pivot.setTime(new DateTime(rs.getTimestamp(1), DateTimeZone.getDefault()));
+					pivot.setInstrument(instrument);
 					pivot.setR3(rs.getFloat(2));
 					pivot.setR2(rs.getFloat(3));
 					pivot.setR1(rs.getFloat(4));
@@ -264,10 +271,10 @@ public class MainDao {
 					return pivot;
 				}
 			});
-			return pivot;
 		} catch (EmptyResultDataAccessException e) {
-			return new Pivot();
+			logger.error("Could not find pivot.", e);
 		}
+		return pivot;
 	}
 
 	public int findFractals(Step step, Instrument instrument) {

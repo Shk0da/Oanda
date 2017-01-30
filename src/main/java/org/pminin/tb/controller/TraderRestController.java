@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.pminin.tb.Scheduler;
-import org.pminin.tb.model.Instrument;
 import org.pminin.tb.model.Order;
 import org.pminin.tb.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +22,8 @@ public class TraderRestController {
 	private Scheduler scheduler;
 	@Autowired
 	private Environment env;
+//	@Autowired
+//	private InstrumentStorage storage;
 
 	public String getAccountDetails() {
 		return "<p>" + accountService.getAccountDetails().toString() + "</p>";
@@ -30,7 +31,7 @@ public class TraderRestController {
 
 	private String createOrder() {
 		Order order = new Order();
-		order.setInstrument(new Instrument("EUR_USD"));
+		order.setInstrument("EUR_USD");
 
 		order.setSide("buy");
 		double balance = accountService.getAccountDetails().getBalance();
@@ -57,8 +58,9 @@ public class TraderRestController {
 			return "resetting state...";
 		case "state":
 			try {
-				byte[] encoded = Files.readAllBytes(Paths.get(env.getProperty("logging.path") + "spring.log"));
-				return new String(encoded, "UTF-8");
+				byte[] encoded = Files.readAllBytes(Paths.get(env.getProperty("logging.path") + "/spring.log"));
+				String logContent = new String(encoded, "UTF-8");
+				return logContent.replaceAll("\n", "</br>");
 			} catch (IOException e) {
 				return e.getMessage();
 			}

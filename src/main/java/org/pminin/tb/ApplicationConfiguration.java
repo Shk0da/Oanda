@@ -25,6 +25,8 @@ import akka.actor.Props;
 public class ApplicationConfiguration {
 	@Autowired
 	private ApplicationContext applicationContext;
+	@Autowired
+	private InstrumentStorage storage;
 
 	private static final Config config = ConfigFactory.load();
 
@@ -48,7 +50,7 @@ public class ApplicationConfiguration {
 			}
 			String left = cfg.getString("left");
 			String right = cfg.getString("right");
-			Instrument instrument = accountService().getInstrument(left, right);
+			Instrument instrument = storage.getInstrument(left + "_" + right);
 			if (instrument != null) {
 				system.actorOf(Props.create(SpringDIActor.class, InstrumentActor.class, instrument),
 						instrument.getInstrument());

@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class Order {
 	private String id;
-	private Instrument instrument;
+	private String instrument;
 	private int units;
 	private String side;
 	private String type;

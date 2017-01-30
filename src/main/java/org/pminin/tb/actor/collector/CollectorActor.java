@@ -1,10 +1,11 @@
 package org.pminin.tb.actor.collector;
 
+import org.pminin.tb.StrategySteps;
 import org.pminin.tb.actor.SpringDIActor;
 import org.pminin.tb.actor.abstracts.AbstractInstrumentActor;
 import org.pminin.tb.constants.Event;
-import org.pminin.tb.constants.Step;
 import org.pminin.tb.model.Instrument;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,9 @@ public class CollectorActor extends AbstractInstrumentActor {
 	private ActorRef m30Collector;
 	private ActorRef m5Collector;
 	private ActorRef tradeChecker;
+	
+	@Autowired
+	private StrategySteps steps;
 
 	public CollectorActor(Instrument instrument) {
 		super(instrument);
@@ -40,9 +44,9 @@ public class CollectorActor extends AbstractInstrumentActor {
 	@Override
 	public void preStart() throws Exception {
 		m5Collector = getContext().actorOf(
-				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, Step.M5), Step.M5.toString());
+				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, steps.tradingStep()), steps.tradingStep().toString());
 		m30Collector = getContext().actorOf(
-				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, Step.M30), Step.M30.toString());
+				Props.create(SpringDIActor.class, StepCollectorActor.class, instrument, steps.trendStep()), steps.trendStep().toString());
 		pivotCollector = getContext().actorOf(Props.create(SpringDIActor.class, PivotCollectorActor.class, instrument),
 				PIVOT);
 		tradeChecker = getContext().actorOf(Props.create(SpringDIActor.class, TradeCheckActor.class, instrument),

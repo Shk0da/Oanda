@@ -72,8 +72,7 @@ public class Candle {
 	@NoArgsConstructor
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class Candles {
-		@JsonDeserialize(using = CustomInstrumentDeserializer.class)
-		private Instrument instrument;
+		private String instrument;
 
 		@JsonDeserialize(using = CustomGranularityDeserializer.class)
 		private Step granularity;
@@ -103,17 +102,6 @@ public class Candle {
 		public Step deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
 				throws IOException, JsonProcessingException {
 			return Step.valueOf(jsonparser.getText());
-		}
-
-	}
-
-	public static class CustomInstrumentDeserializer extends JsonDeserializer<Instrument> {
-		@Override
-		public Instrument deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
-				throws IOException, JsonProcessingException {
-			Instrument result = new Instrument();
-			result.setInstrument(jsonparser.getText());
-			return result;
 		}
 
 	}
