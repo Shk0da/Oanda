@@ -8,6 +8,7 @@ import org.pminin.tb.model.Instrument;
 import org.pminin.tb.model.Order;
 import org.pminin.tb.model.Order.Orders;
 import org.pminin.tb.model.Pivot;
+import org.pminin.tb.model.Price;
 import org.pminin.tb.model.Trade;
 import org.pminin.tb.model.Trade.Trades;
 
@@ -27,11 +28,15 @@ public interface AccountService {
 
 	Candles getCandles(Step step, DateTime start, Instrument instrument);
 
+	Instrument getInstrument(String pair);
+
 	Instrument getInstrument(String left, String right);
 
 	Orders getOrders(Instrument instrument);
 
 	Pivot getPivot(Instrument instrument);
+	
+	Price getPrice(Instrument instrument);
 
 	Trades getTrades(Instrument instrument);
 

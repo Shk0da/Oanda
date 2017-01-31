@@ -22,6 +22,6 @@ public interface Constants {
 	static final String BUY = "buy";
 	static final String TYPE_MARKET = "market";
 	static final String TYPE_MARKETIFTOUCHED = "marketIfTouched";
-	static final String TYPE_STOP = "stop";
+	static final String TYPE_LIMIT = "stop";
 
 }

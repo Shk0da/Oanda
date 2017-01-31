@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class PostOrderResponse {
 	public boolean active = false;
-	private Instrument instrument;
+	private String instrument;
 	private double price;
 	@JsonDeserialize(using = UnixTimestampDeserializer.class)
 	private DateTime time;

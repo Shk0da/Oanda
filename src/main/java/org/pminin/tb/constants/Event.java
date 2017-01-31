@@ -23,15 +23,15 @@ public enum Event {
 	@AllArgsConstructor
 	@NoArgsConstructor
 	@Data
-	public static class PivotChanged {
-		private Pivot pivot;
+	public static class CheckFractalBreak {
+		Candle incompleteCandle;
 	}
 
 	@AllArgsConstructor
 	@NoArgsConstructor
 	@Data
-	public static class CheckFractalBreak {
-		Candle incompleteCandle;
+	public static class CurrentRate {
+		private Candle candle;
 	}
 
 	@AllArgsConstructor
@@ -53,8 +53,8 @@ public enum Event {
 	@AllArgsConstructor
 	@NoArgsConstructor
 	@Data
-	public static class CurrentRate {
-		private Candle candle;
+	public static class PivotChanged {
+		private Pivot pivot;
 	}
 
 	@AllArgsConstructor

@@ -25,7 +25,7 @@ public class Trade {
 	private String id;
 	private int units;
 	private String side;
-	private Instrument instrument;
+	private String instrument;
 	@JsonDeserialize(using = UnixTimestampDeserializer.class)
 	private DateTime time;
 	private double price;

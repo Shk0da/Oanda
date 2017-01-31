@@ -27,9 +27,8 @@ public class Pivot {
 	public static final int TREND_UP = 1;
 	public static final int TREND_DOWN = -1;
 
-	private static final double MIN_GAP = 0.00007;
-
 	private DateTime time;
+	private Instrument instrument;
 
 	private double r3;
 	private double r2;
@@ -49,11 +48,28 @@ public class Pivot {
 		return time.toDate();
 	}
 
-	public void setDateTime(Date date) {
-		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
+	private double getNearest(double value, double spread, int trend, List<Double> points) {
+		double defaultValue = value + value * instrument.getPip() * 2 * trend;
+		Predicate<Double> isComplete = p -> trend * (p - value) > spread;
+
+		List<Double> list = points.stream().collect(Collectors.partitioningBy(isComplete)).get(true);
+		if (list == null || list.isEmpty()) {
+			return defaultValue;
+		}
+		Optional<Double> nearest = Optional.of(defaultValue);
+		if (trend > 0) {
+			nearest = list.stream().min(Comparator.naturalOrder());
+		} else if (trend < 0) {
+			nearest = list.stream().max(Comparator.naturalOrder());
+		}
+		if (!nearest.isPresent()) {
+			log.error(String.format("Could not find nearest pivot for %.5f with direction %d and pivot list: %s", value,
+					trend, this));
+		}
+		return nearest.orElse(defaultValue).doubleValue();
 	}
 
-	public double getNearestNoMiddle(double value, int trend) {
+	public double getNearestNoMiddle(double value, double spread, int trend) {
 		List<Double> points = new ArrayList<>();
 		points.add(r3);
 		points.add(r2);
@@ -63,10 +79,10 @@ public class Pivot {
 		points.add(s2);
 		points.add(s3);
 
-		return getNearest(value, trend, points);
+		return getNearest(value, spread, trend, points);
 	}
 
-	public double getNearestWithMiddle(double value, int trend) {
+	public double getNearestWithMiddle(double value, double spread, int trend) {
 		List<Double> points = new ArrayList<>();
 		points.add(r3);
 		points.add(m5);
@@ -82,22 +98,10 @@ public class Pivot {
 		points.add(m0);
 		points.add(s3);
 
-		return getNearest(value, trend, points);
+		return getNearest(value, spread, trend, points);
 	}
 
-	private double getNearest(double value, int trend, List<Double> points) {
-		double defaultValue = value + value * 0.007 * trend;
-		Predicate<Double> isComplete = p -> trend * (p - value) - MIN_GAP > 0;
-
-		List<Double> list = points.stream().collect(Collectors.partitioningBy(isComplete)).get(true);
-		if (list == null) {
-			return defaultValue;
-		}
-		Optional<Double> nearest = list.stream().min(Comparator.naturalOrder());
-		if (!nearest.isPresent()) {
-			log.error(String.format("Could not find nearest pivot for %.5f with direction %d and pivot list: %s", value,
-					trend, this));
-		}
-		return nearest.orElse(defaultValue).doubleValue();
+	public void setDateTime(Date date) {
+		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
 	}
 }

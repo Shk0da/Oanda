@@ -1,10 +1,11 @@
 package org.pminin.tb.actor.analyzer;
 
+import org.pminin.tb.StrategySteps;
 import org.pminin.tb.actor.SpringDIActor;
 import org.pminin.tb.actor.abstracts.AbstractInstrumentActor;
 import org.pminin.tb.constants.Event;
-import org.pminin.tb.constants.Step;
 import org.pminin.tb.model.Instrument;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,9 @@ public class AnalyzerActor extends AbstractInstrumentActor {
 
 	private ActorRef fractalAnalyzerM5;
 	private ActorRef fractalAnalyzerM30;
+
+	@Autowired
+	private StrategySteps steps;
 
 	public AnalyzerActor(Instrument instrument) {
 		super(instrument);
@@ -35,10 +39,11 @@ public class AnalyzerActor extends AbstractInstrumentActor {
 	@Override
 	public void preStart() throws Exception {
 		fractalAnalyzerM5 = getContext().actorOf(
-				Props.create(SpringDIActor.class, CandleAnalyzerActor.class, instrument, Step.M5), Step.M5.toString());
+				Props.create(SpringDIActor.class, CandleAnalyzerActor.class, instrument, steps.tradingStep()),
+				steps.tradingStep().toString());
 		fractalAnalyzerM30 = getContext().actorOf(
-				Props.create(SpringDIActor.class, CandleAnalyzerActor.class, instrument, Step.M30),
-				Step.M30.toString());
+				Props.create(SpringDIActor.class, CandleAnalyzerActor.class, instrument, steps.trendStep()),
+				steps.trendStep().toString());
 		getContext().actorOf(Props.create(SpringDIActor.class, PivotChangeActor.class, instrument), PIVOT);
 	}
 

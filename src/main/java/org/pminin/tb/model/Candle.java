@@ -27,53 +27,12 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Candle {
-	@JsonDeserialize(using = UnixTimestampDeserializer.class)
-	private DateTime time;
-	private double openBid;
-	private double highBid;
-	private double lowBid;
-	private double closeBid;
-	private double openAsk;
-	private double highAsk;
-	private double lowAsk;
-	private double closeAsk;
-	private int volume;
-	private boolean complete;
-
-	private boolean broken;
-	private DateTime brokenTime;
-	private int direction;
-
-	@Override
-	public String toString() {
-		return "Candle [time=" + time + ", openBid=" + openBid + ", highBid=" + highBid + ", lowBid=" + lowBid
-				+ ", closeBid=" + closeBid + ", openAsk=" + openAsk + ", highAsk=" + highAsk + ", lowAsk=" + lowAsk
-				+ ", closeAsk=" + closeAsk + ", volume=" + volume + ", complete=" + complete + "]";
-	}
-
-	public Date getDateTime() {
-		return time.toDate();
-	}
-
-	public void setDateTime(Date date) {
-		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
-	}
-
-	public Date getBrokenDateTime() {
-		return time.toDate();
-	}
-
-	public void setBrokenDateTime(Date date) {
-		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
-	}
-
 	@Data
 	@AllArgsConstructor
 	@NoArgsConstructor
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class Candles {
-		@JsonDeserialize(using = CustomInstrumentDeserializer.class)
-		private Instrument instrument;
+		private String instrument;
 
 		@JsonDeserialize(using = CustomGranularityDeserializer.class)
 		private Step granularity;
@@ -97,7 +56,6 @@ public class Candle {
 			return string;
 		}
 	}
-
 	public static class CustomGranularityDeserializer extends JsonDeserializer<Step> {
 		@Override
 		public Step deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
@@ -106,15 +64,41 @@ public class Candle {
 		}
 
 	}
+	@JsonDeserialize(using = UnixTimestampDeserializer.class)
+	private DateTime time;
+	private double openMid;
+	private double highMid;
+	private double lowMid;
+	private double closeMid;
 
-	public static class CustomInstrumentDeserializer extends JsonDeserializer<Instrument> {
-		@Override
-		public Instrument deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
-				throws IOException, JsonProcessingException {
-			Instrument result = new Instrument();
-			result.setInstrument(jsonparser.getText());
-			return result;
-		}
+	private int volume;
+	private boolean complete;
+	private boolean broken;
 
+	private DateTime brokenTime;
+
+	private int direction;
+
+	public Date getBrokenDateTime() {
+		return time.toDate();
+	}
+
+	public Date getDateTime() {
+		return time.toDate();
+	}
+
+	public void setBrokenDateTime(Date date) {
+		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
+	}
+
+	public void setDateTime(Date date) {
+		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
+	}
+
+	@Override
+	public String toString() {
+		return "Candle [time=" + time + ", open=" + openMid + ", high=" + highMid + ", low=" + lowMid + ", close=" + closeMid
+				+ ", volume=" + volume + ", complete=" + complete + ", broken=" + broken + ", brokenTime=" + brokenTime
+				+ ", direction=" + direction + "]";
 	}
 }

@@ -15,23 +15,6 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Instrument {
 
-	private String instrument;
-
-	private String displayName;
-
-	private double pip;
-
-	private double maxTradeUnits;
-
-	public Instrument(String instrument) {
-		this(instrument, instrument, 0.0001, 10000000);
-	}
-
-	@Override
-	public String toString() {
-		return instrument;
-	}
-
 	@Data
 	@AllArgsConstructor
 	@NoArgsConstructor
@@ -39,6 +22,14 @@ public class Instrument {
 	public static class Instruments {
 		private List<Instrument> instruments = new ArrayList<Instrument>();
 	}
+
+	private String instrument;
+
+	private String displayName;
+
+	private double pip;
+
+	private double maxTradeUnits;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -63,5 +54,10 @@ public class Instrument {
 		int result = 1;
 		result = prime * result + ((instrument == null) ? 0 : instrument.hashCode());
 		return result;
+	}
+
+	@Override
+	public String toString() {
+		return instrument;
 	}
 }

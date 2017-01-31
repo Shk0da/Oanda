@@ -28,7 +28,7 @@ public class ConfirmFractalActor extends StepActor {
 			int count = mainDao.findFractals(step, instrument);
 			if (count > 0) {
 				Candle lastFractal = mainDao.getLastFractal(step, instrument);
-				log.info(String.format("New confirmed fractal direction: %s",
+				log.debug(String.format("New confirmed fractal direction: %s",
 						lastFractal.getDirection() == DIRECTION_UP ? "up" : "down"));
 				getContext().actorSelection(ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + STRATEGY)
 						.tell(new FractalConfirmed(step, lastFractal), self());

@@ -12,8 +12,8 @@ import akka.event.LoggingAdapter;
 
 public abstract class AbstractInstrumentActor extends UntypedActor implements Constants {
 
-	protected LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 	protected static final Config config = ConfigFactory.load().getConfig("main");
+	protected LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
 	protected final Instrument instrument;
 

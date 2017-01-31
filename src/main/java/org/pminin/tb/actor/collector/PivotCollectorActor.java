@@ -23,6 +23,10 @@ public class PivotCollectorActor extends AbstractInstrumentActor {
 		super(instrument);
 	}
 
+	private String analyzerActorUrl() {
+		return ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + ANALYZER + "/" + PIVOT;
+	}
+
 	@Override
 	public void onReceive(Object msg) throws Exception {
 		Pivot pivot = accountService.getPivot(instrument);
@@ -37,10 +41,6 @@ public class PivotCollectorActor extends AbstractInstrumentActor {
 		} else {
 			throw new Exception("Pivot is null");
 		}
-	}
-
-	private String analyzerActorUrl() {
-		return ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + ANALYZER + "/" + PIVOT;
 	}
 
 }

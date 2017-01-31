@@ -19,6 +19,8 @@ import org.pminin.tb.model.Order;
 import org.pminin.tb.model.Order.Orders;
 import org.pminin.tb.model.Pivot;
 import org.pminin.tb.model.PostOrderResponse;
+import org.pminin.tb.model.Price;
+import org.pminin.tb.model.Price.Prices;
 import org.pminin.tb.model.Trade;
 import org.pminin.tb.model.Trade.Trades;
 import org.pminin.tb.service.AccountService;
@@ -45,9 +47,11 @@ public class OandaAccountService implements AccountService {
 
 	private static final String ACCOUNT_DETAILS_API = "v1/accounts/%s";
 
+	private static final String PRICES_API = "v1/prices?instruments=%s";
 	private static final String INSTRUMENTS_API = "v1/instruments?accountId=%s&instruments=%s_%s";
-	private static final String CANDLES_API = "v1/candles?accountId=%s&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
-	private static final String CANDLES_API_COUNT = "v1/candles?accountId=%s&granularity=%s&instrument=%s&count=%d";
+	private static final String INSTRUMENTS_API_1 = "v1/instruments?accountId=%s&instruments=%s";
+	private static final String CANDLES_API = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
+	private static final String CANDLES_API_COUNT = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&count=%d";
 
 	@Autowired
 	Logger logger;
@@ -108,7 +112,7 @@ public class OandaAccountService implements AccountService {
 		map.put("instrument", order.getInstrument().toString());
 		map.put("units", String.valueOf(order.getUnits()));
 		map.put("side", order.getSide());
-		map.put("type", Constants.TYPE_MARKETIFTOUCHED);
+		map.put("type", Constants.TYPE_LIMIT);
 		map.put("price", String.format("%.5f", order.getPrice()));
 		map.put("expiry", String.valueOf(DateTime.now().plusDays(2).getMillis()));
 		map.put("stopLoss", String.format("%.5f", order.getStopLoss()));
@@ -128,7 +132,7 @@ public class OandaAccountService implements AccountService {
 	private Candles getCandles(Step step, DateTime start, DateTime end, Instrument instrument, boolean includeFirst) {
 		String candlesUrl = candlesUrl(step, start, end, instrument, includeFirst);
 		Optional<Candles> candles = getResponse(candlesUrl, HttpMethod.GET, headers(), Candles.class);
-		return candles.orElse(new Candles(instrument, step, new ArrayList<Candle>()));
+		return candles.orElse(new Candles(instrument.toString(), step, new ArrayList<Candle>()));
 	}
 
 	@Override
@@ -141,6 +145,18 @@ public class OandaAccountService implements AccountService {
 		String candlesUrl = candlesUrl(step, count, instrument);
 		Optional<Candles> response = getResponse(candlesUrl, HttpMethod.GET, headers(), Candles.class);
 		return response.orElse(new Candles());
+	}
+
+	@Override
+	public Instrument getInstrument(String pair) {
+		Optional<Instruments> response = getResponse(instrumentsUrl(pair), HttpMethod.GET, headers(),
+				Instruments.class);
+		if (response.isPresent()) {
+			List<Instrument> instruments = response.get().getInstruments();
+			return instruments.stream().findFirst().orElse(null);
+		} else {
+			return null;
+		}
 	}
 
 	@Override
@@ -173,9 +189,9 @@ public class OandaAccountService implements AccountService {
 		try {
 			Candle pivotCandle = candles.getCandles().iterator().next();
 			if (pivotCandle != null) {
-				double high = (pivotCandle.getHighAsk() + pivotCandle.getHighBid()) / 2;
-				double low = (pivotCandle.getLowAsk() + pivotCandle.getLowBid()) / 2;
-				double close = (pivotCandle.getCloseAsk() + pivotCandle.getCloseBid()) / 2;
+				double high = pivotCandle.getHighMid();
+				double low = pivotCandle.getLowMid();
+				double close = pivotCandle.getCloseMid();
 				double pp = (high + close + low) / 3;
 				double r1 = 2 * pp - low;
 				double s1 = 2 * pp - high;
@@ -189,7 +205,7 @@ public class OandaAccountService implements AccountService {
 				double m2 = (pp + s1) / 2;
 				double m1 = (s1 + s2) / 2;
 				double m0 = (s2 + s3) / 2;
-				return new Pivot(pivotCandle.getTime(), r3, r2, r1, pp, s1, s2, s3, m0, m1, m2, m3, m4, m5);
+				return new Pivot(pivotCandle.getTime(), instrument, r3, r2, r1, pp, s1, s2, s3, m0, m1, m2, m3, m4, m5);
 			}
 		} catch (Exception e) {
 			logger.error("Could not get pivot points", e);
@@ -197,8 +213,18 @@ public class OandaAccountService implements AccountService {
 		return null;
 	}
 
-	private <T> Optional<T> getResponse(String url, HttpMethod method, HttpEntity<?> entity,
-			Class<T> responseType) {
+	@Override
+	public Price getPrice(Instrument instrument) {
+		String url = apiUrl() + String.format(PRICES_API, instrument.toString());
+		Optional<Prices> response = getResponse(url, HttpMethod.GET, headers(), Prices.class);
+		if (response.isPresent()) {
+			Optional<Price> priceOpt = response.get().getPrices().stream().findFirst();
+			return priceOpt.orElse(null);
+		}
+		return null;
+	}
+
+	private <T> Optional<T> getResponse(String url, HttpMethod method, HttpEntity<?> entity, Class<T> responseType) {
 		T response = null;
 		try {
 			RestTemplate tmpl = new RestTemplate();
@@ -212,7 +238,7 @@ public class OandaAccountService implements AccountService {
 				}
 			}
 		} catch (HttpStatusCodeException e) {
-			logger.error("Could not get response from " + url, e);
+			logger.error("Could not get response from " + url);
 			logger.error(e.getResponseBodyAsString());
 		} catch (RestClientException e) {
 			logger.error("Could not get response from " + url, e);
@@ -220,7 +246,6 @@ public class OandaAccountService implements AccountService {
 		Optional<T> result = Optional.ofNullable(response);
 		return result;
 	}
-	
 
 	@Override
 	public Trades getTrades(Instrument instrument) {
@@ -239,6 +264,10 @@ public class OandaAccountService implements AccountService {
 		headers.set("X-Accept-Datetime-Format", "UNIX");
 		HttpEntity<Object> entity = new HttpEntity<>(headers);
 		return entity;
+	}
+
+	private String instrumentsUrl(String pair) {
+		return apiUrl() + String.format(INSTRUMENTS_API_1, accountId(), pair);
 	}
 
 	private String instrumentsUrl(String left, String right) {

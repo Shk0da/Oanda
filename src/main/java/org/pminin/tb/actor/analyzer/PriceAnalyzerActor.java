@@ -33,7 +33,7 @@ public class PriceAnalyzerActor extends StepActor {
 			Pivot pivot = accountService.getPivot(instrument);
 			double s3 = pivot.getS3();
 			double r3 = pivot.getR3();
-			if (s3 <= candle.getLowBid() || r3 <= candle.getHighAsk()) {
+			if (s3 <= candle.getLowMid() || r3 <= candle.getHighMid()) {
 				getContext().actorSelection(ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + STRATEGY)
 						.tell(Event.TREND_IS_HOT, self());
 			}

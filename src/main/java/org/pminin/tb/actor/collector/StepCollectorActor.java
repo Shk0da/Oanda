@@ -32,6 +32,10 @@ public class StepCollectorActor extends StepActor {
 		super(instrument, step);
 	}
 
+	private String analyzerActorUrl() {
+		return ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + ANALYZER + "/" + step.toString();
+	}
+
 	@Override
 	public void onReceive(Object arg0) throws Exception {
 		DateTime start = lastCandle != null ? lastCandle.getTime()
@@ -51,10 +55,6 @@ public class StepCollectorActor extends StepActor {
 		if (incomplete != null) {
 			getContext().actorSelection(analyzerActorUrl()).tell(incomplete, self());
 		}
-	}
-
-	private String analyzerActorUrl() {
-		return ACTOR_PATH_HEAD + "/" + instrument.toString() + "/" + ANALYZER + "/" + step.toString();
 	}
 
 	@Override

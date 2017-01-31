@@ -23,10 +23,12 @@ import akka.actor.Props;
 @Configuration
 @EnableScheduling
 public class ApplicationConfiguration {
+	private static final Config config = ConfigFactory.load();
 	@Autowired
 	private ApplicationContext applicationContext;
 
-	private static final Config config = ConfigFactory.load();
+	@Autowired
+	private InstrumentStorage storage;
 
 	@Bean(name = "accountService")
 	public AccountService accountService() {
@@ -48,7 +50,7 @@ public class ApplicationConfiguration {
 			}
 			String left = cfg.getString("left");
 			String right = cfg.getString("right");
-			Instrument instrument = accountService().getInstrument(left, right);
+			Instrument instrument = storage.getInstrument(left + "_" + right);
 			if (instrument != null) {
 				system.actorOf(Props.create(SpringDIActor.class, InstrumentActor.class, instrument),
 						instrument.getInstrument());
