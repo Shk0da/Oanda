@@ -50,7 +50,7 @@ public class Pivot {
 
 	private double getNearest(double value, double spread, int trend, List<Double> points) {
 		double defaultValue = value + value * instrument.getPip() * 2 * trend;
-		Predicate<Double> isComplete = p -> trend * (p - value) > spread + instrument.getPip();
+		Predicate<Double> isComplete = p -> trend * (p - value) > spread;
 
 		List<Double> list = points.stream().collect(Collectors.partitioningBy(isComplete)).get(true);
 		if (list == null || list.isEmpty()) {

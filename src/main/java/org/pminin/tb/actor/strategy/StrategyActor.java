@@ -348,10 +348,10 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		case INACTIVE:
 		case WAITING_FOR_TREND:
 		case WAITING_FOR_VERTICAL_LINE:
-			log.info("Skipping new confirmed 5M fractal as the state is incorrect");
+			log.debug("Skipping new confirmed 5M fractal as the state is incorrect");
 			break;
 		case WAITING_FOR_FRACTALS:
-			log.info("5M trend factal has confirmed");
+			log.debug("5M trend factal has confirmed");
 			state = confirmed5M != null && brokenOpp5M != null && confirmedOpp5M != null ? State.TRADING : state;
 		case TRADING:
 		case ORDER_POSTED:
@@ -375,10 +375,10 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		case INACTIVE:
 		case WAITING_FOR_TREND:
 		case WAITING_FOR_VERTICAL_LINE:
-			log.info("Skipping new confirmed 5M fractal with opp direction as the state is incorrect");
+			log.debug("Skipping new confirmed 5M fractal with opp direction as the state is incorrect");
 			break;
 		case WAITING_FOR_FRACTALS:
-			log.info("Opposite 5M factal has confirmed");
+			log.debug("Opposite 5M factal has confirmed");
 			state = confirmed5M != null && brokenOpp5M != null && confirmedOpp5M != null ? State.TRADING : state;
 		case TRADING:
 		case ORDER_POSTED:
@@ -428,7 +428,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 					|| newStopLoss * direction > openedTrade.getStopLoss() * direction;
 			if (needUpdateStopLoss) {
 				openedTrade.setStopLoss(newStopLoss);
-				log.info("Order stop loss is set to " + newStopLoss);
+				log.info(String.format("Order stop loss is set to %.5f", newStopLoss));
 				if (accountService.updateTrade(openedTrade) == null) {
 					log.info("A problem occurred during updating the trade. Resetting state...");
 					resetState(true);
@@ -442,13 +442,14 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 			if (order.getPrice() != newPrice) {
 				order.setPrice(newPrice);
 				changed = true;
-				log.info("Order new price is set to " + newPrice);
+				log.info(String.format("Order new price is set to %.5f", newPrice));
 				Pivot lastPivot = mainDao.getLastPivot(instrument);
 				Price price = accountService.getPrice(instrument);
+				log.info(String.format("Current spread is %.5f", price.getSpread()));
 				double takeProfit = lastPivot.getNearestWithMiddle(newPrice, price.getSpread(), getMarketDirection());
 				if (order.getTakeProfit() != takeProfit) {
 					order.setTakeProfit(takeProfit);
-					log.info("Order new take profit is set to " + takeProfit);
+					log.info(String.format("Order new take profit is set to %.5f", takeProfit));
 				}
 			}
 			boolean newSLisOK = newStopLoss * direction < newPrice * direction;

@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class Price {
 
 	private String intrument;
-	private DateTime time;
+	private long time;
 	private double bid;
 	private double ask;
 	private String halted;
@@ -29,5 +29,9 @@ public class Price {
 	
 	public double getSpread() {
 		return Math.abs(ask - bid);
+	}
+	
+	public DateTime getDateTime() {
+		return new DateTime(time);
 	}
 }
