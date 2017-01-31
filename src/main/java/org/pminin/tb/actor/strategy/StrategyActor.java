@@ -268,6 +268,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 
 	private void resetState(boolean lookForNewTrend) {
 		if (!State.INACTIVE.equals(state)) {
+			log.error("trace", new Exception());
 			log.info("Resetting state: closing trades and orders and looking for the last broken 30M fractal...");
 			if (State.TRADE_OPENED.equals(state) || State.ORDER_POSTED.equals(state)) {
 				resetOrder();
