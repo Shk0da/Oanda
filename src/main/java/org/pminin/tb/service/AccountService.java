@@ -1,8 +1,11 @@
 package org.pminin.tb.service;
 
+import java.util.List;
+
 import org.joda.time.DateTime;
 import org.pminin.tb.constants.Step;
 import org.pminin.tb.model.AccountDetails;
+import org.pminin.tb.model.CalendarEvent;
 import org.pminin.tb.model.Candle.Candles;
 import org.pminin.tb.model.Instrument;
 import org.pminin.tb.model.Order;
@@ -43,5 +46,7 @@ public interface AccountService {
 	Order updateOrder(Order order);
 
 	Trade updateTrade(Trade trade);
+	
+	List<CalendarEvent> getCalendarEvents(Instrument instrument, int futureHoursCount);
 
 }

@@ -8,7 +8,6 @@ WITH breaks AS (
 	FROM %FRACTALS%_%INSTRUMENT%_%STEP% f
 		JOIN %CANDLES%_%INSTRUMENT%_%STEP% c ON c."time"=f."time"
 	WHERE f."time" > now() - interval '24 hours'
-		COALESCE((SELECT max("time") FROM %FRACTALS%_%INSTRUMENT%_%STEP% WHERE broken = true),  '1999-01-08')
 	ORDER BY "time" DESC
 ),
 brokenFractals AS (

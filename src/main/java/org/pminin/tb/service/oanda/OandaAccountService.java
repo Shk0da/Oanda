@@ -1,6 +1,7 @@
 package org.pminin.tb.service.oanda;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import org.joda.time.DateTimeZone;
 import org.pminin.tb.constants.Constants;
 import org.pminin.tb.constants.Step;
 import org.pminin.tb.model.AccountDetails;
+import org.pminin.tb.model.CalendarEvent;
 import org.pminin.tb.model.Candle;
 import org.pminin.tb.model.Candle.Candles;
 import org.pminin.tb.model.Instrument;
@@ -48,6 +50,7 @@ public class OandaAccountService implements AccountService {
 	private static final String ACCOUNT_DETAILS_API = "v1/accounts/%s";
 
 	private static final String PRICES_API = "v1/prices?instruments=%s";
+	private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d";
 	private static final String INSTRUMENTS_API = "v1/instruments?accountId=%s&instruments=%s_%s";
 	private static final String INSTRUMENTS_API_1 = "v1/instruments?accountId=%s&instruments=%s";
 	private static final String CANDLES_API = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
@@ -318,4 +321,10 @@ public class OandaAccountService implements AccountService {
 		return tradesUrl() + "/" + trade.getId();
 	}
 
+	@Override
+	public List<CalendarEvent> getCalendarEvents(Instrument instrument, int futureHoursCount) {
+		String url = apiUrl() + String.format(CALENDAR_API, instrument.toString(), futureHoursCount * 3600);
+		Optional<CalendarEvent[]> response = getResponse(url, HttpMethod.GET, headers(), CalendarEvent[].class);
+		return Arrays.asList(response.orElse(new CalendarEvent[] {}));
+	}
 }

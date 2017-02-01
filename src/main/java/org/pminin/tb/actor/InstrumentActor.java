@@ -3,6 +3,7 @@ package org.pminin.tb.actor;
 import org.pminin.tb.actor.abstracts.AbstractInstrumentActor;
 import org.pminin.tb.actor.analyzer.AnalyzerActor;
 import org.pminin.tb.actor.collector.CollectorActor;
+import org.pminin.tb.actor.collector.NewsCheckActor;
 import org.pminin.tb.actor.strategy.StrategyActor;
 import org.pminin.tb.constants.Event;
 import org.pminin.tb.dao.MainDao;
@@ -23,6 +24,7 @@ public class InstrumentActor extends AbstractInstrumentActor {
 	private ActorRef analyzer;
 	private ActorRef collector;
 	private ActorRef strategy;
+//	private ActorRef newsActor;
 
 	public InstrumentActor(Instrument instrument) {
 		super(instrument);
@@ -46,6 +48,8 @@ public class InstrumentActor extends AbstractInstrumentActor {
 		collector = getContext().actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument),
 				COLLECTOR);
 		analyzer = getContext().actorOf(Props.create(SpringDIActor.class, AnalyzerActor.class, instrument), ANALYZER);
+//		newsActor = 
+		getContext().actorOf(Props.create(SpringDIActor.class, NewsCheckActor.class, instrument), NEWSCHECK);
 	}
 
 }

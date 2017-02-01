@@ -7,6 +7,7 @@ public interface Constants {
 	static final String COLLECTOR = "collector";
 	static final String ANALYZER = "analyzer";
 	static final String STRATEGY = "strategy";
+	static final String NEWSCHECK = "newscheck";
 
 	static final String PIVOT = "pivot";
 	static final String TRADE_CHECK = "tradecheck";

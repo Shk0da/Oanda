@@ -66,5 +66,5 @@ public class ApplicationConfiguration {
 	public Logger getLogger() {
 		return LoggerFactory.getLogger("mainLog");
 	}
-
+	
 }

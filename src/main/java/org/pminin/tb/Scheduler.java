@@ -1,17 +1,17 @@
 package org.pminin.tb;
 
 import java.util.Date;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
+import org.joda.time.DateTime;
 import org.pminin.tb.constants.Constants;
 import org.pminin.tb.constants.Event;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +29,10 @@ public class Scheduler implements Constants {
 	private boolean active = false;
 
 	private boolean forceStartOfDay = true;
+	
+	@Autowired 
+	private TaskScheduler taskScheduler;
+
 
 	@Autowired
 	public Scheduler(ActorSystem actorSystem) {
@@ -64,7 +68,7 @@ public class Scheduler implements Constants {
 
 	@PostConstruct
 	public void fireInitialCollection() {
-		new ScheduledThreadPoolExecutor(1).schedule(() -> {
+		taskScheduler.schedule(() -> {
 
 			forceStartOfDay = isNotFalse("forcestartofday");
 			active = isTrue("autostart") || forceStartOfDay;
@@ -79,7 +83,7 @@ public class Scheduler implements Constants {
 			} catch (Exception e) {
 				log.info("Something went wrong while parsing cron expression. I will not say when trading will start");
 			}
-		}, 15, TimeUnit.SECONDS);
+		}, DateTime.now().plusSeconds(15).toDate());
 	}
 
 	@Scheduled(cron = "${main.scheduler.forced-work.cron}")
@@ -91,6 +95,15 @@ public class Scheduler implements Constants {
 			forceStartOfDay = false;
 			startWorkEveryDay();
 		}
+	}
+
+	@Scheduled(cron = "${main.scheduler.news-check.cron}")
+	public void checkNews() {
+		if (!active || actorSystem == null) {
+			return;
+		}
+		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.NEWSCHECK).tell(Event.WORK,
+				actorSystem.guardian());
 	}
 
 	private boolean isNotFalse(String path) {
@@ -113,10 +126,11 @@ public class Scheduler implements Constants {
 			return;
 		}
 		fireCollectPivot();
-		new ScheduledThreadPoolExecutor(1).schedule(() -> {
+		checkNews();
+		taskScheduler.schedule(() -> {
 			actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.WORK,
 					actorSystem.guardian());
-		}, 15, TimeUnit.SECONDS);
+		}, DateTime.now().plusSeconds(15).toDate());
 	}
 
 	@Scheduled(cron = "${main.scheduler.end-work.cron}")

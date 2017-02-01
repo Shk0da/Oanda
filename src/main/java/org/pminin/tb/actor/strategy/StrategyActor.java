@@ -25,6 +25,7 @@ import org.pminin.tb.service.AccountService;
 import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
 @Component("StrategyActor")
@@ -39,6 +40,9 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 
 	@Autowired
 	private StrategySteps steps;
+
+	@Autowired
+	private TaskScheduler taskScheduler;
 
 	private Order order = new Order();
 
@@ -114,6 +118,24 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 
 	public State getState() {
 		return state;
+	}
+
+	private double getTakeProfit(double newPrice) {
+		Price price = accountService.getPrice(instrument);
+		log.info(String.format("Current spread is %.5f", price.getSpread()));
+		if (!config.hasPath("takeprogit") || "pivot".equals(config.getString("takeprofit"))) {
+			Pivot lastPivot = mainDao.getLastPivot(instrument);
+			return lastPivot.getNearestWithMiddle(newPrice, price.getSpread(), getMarketDirection());
+		} else {
+			int pips = 3;
+			try {
+				pips = config.getInt("takeprofit");
+				System.out.print(pips);
+			} catch (Exception e){
+				log.info("Failed to read takeprofit value from config. Setting default takeprofit ({} pips)", pips);
+			}
+			return newPrice + price.getSpread() + pips * instrument.getPip();
+		}
 	}
 
 	private void initOrder() {
@@ -216,7 +238,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 	private void processEvent(Event event) {
 		switch (event) {
 		case WORK:
-			if (state == State.INACTIVE) {
+			if (State.INACTIVE.equals(state)) {
 				state = State.WAITING_FOR_TREND;
 				if (config.hasPath("forcetrendlookup") && config.getBoolean("forcetrendlookup")) {
 					log.info("Current trend lokup is forced. Looking for last broken 30M fractal...");
@@ -224,6 +246,8 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 				} else {
 					log.info("Started work. Waiting for trend...");
 				}
+			} else if (State.SUSPENDED.equals(state)) {
+				log.info("The trading is suspended. Work will not be started.");
 			}
 			break;
 		case TRADE_CLOSED:
@@ -234,10 +258,24 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 			log.info("The pending order has been closed. Resetting state...");
 			resetState(true);
 			break;
+		case NEWS_IN_5:
+			log.info("New will be published in 5 minutes.");
+			resetState(false);
+			taskScheduler.schedule(() -> {
+				log.info("Returning to work after news");
+				processEvent(Event.WORK);
+			}, DateTime.now().plusHours(2).toDate());
+			break;
+		case TREND_IS_HOT:
+			resetState(false);
+			taskScheduler.schedule(() -> {
+				log.info("Returning from inactive state");
+				state = State.SUSPENDED;
+				processEvent(Event.WORK);
+			}, DateTime.now().plusHours(2).toDate());
+			break;
 		case KILL_EM_ALL:
 		case TGI_FRIDAY:
-		case NEWS_IN_5:
-		case TREND_IS_HOT:
 			resetState(false);
 			break;
 		default:
@@ -423,6 +461,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		double newStopLoss = getOrderStopLoss();
 		double newPrice = getOrderPrice();
 		double oldStopLoss = order.getStopLoss();
+		double takeProfit = getTakeProfit(newPrice);
 		if (State.TRADE_OPENED.equals(state)) {
 			boolean needUpdateStopLoss = openedTrade.getStopLoss() == 0
 					|| newStopLoss * direction > openedTrade.getStopLoss() * direction;
@@ -443,10 +482,6 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 				order.setPrice(newPrice);
 				changed = true;
 				log.info(String.format("Order new price is set to %.5f", newPrice));
-				Pivot lastPivot = mainDao.getLastPivot(instrument);
-				Price price = accountService.getPrice(instrument);
-				log.info(String.format("Current spread is %.5f", price.getSpread()));
-				double takeProfit = lastPivot.getNearestWithMiddle(newPrice, price.getSpread(), getMarketDirection());
 				if (order.getTakeProfit() != takeProfit) {
 					order.setTakeProfit(takeProfit);
 					log.info(String.format("Order new take profit is set to %.5f", takeProfit));
