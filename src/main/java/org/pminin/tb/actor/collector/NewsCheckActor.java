@@ -9,8 +9,12 @@ import org.pminin.tb.model.CalendarEvent;
 import org.pminin.tb.model.Instrument;
 import org.pminin.tb.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.stereotype.Component;
 
+@Component("NewsCheckActor")
+@Scope("prototype")
 public class NewsCheckActor extends AbstractInstrumentActor {
 
 	@Autowired

@@ -116,11 +116,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		return stopLoss;
 	}
 
-	public State getState() {
-		return state;
-	}
-
-	private double getTakeProfit(double newPrice) {
+	private double getOrderTakeProfit(double newPrice) {
 		Price price = accountService.getPrice(instrument);
 		log.info(String.format("Current spread is %.5f", price.getSpread()));
 		if (!config.hasPath("takeprogit") || "pivot".equals(config.getString("takeprofit"))) {
@@ -136,6 +132,10 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 			}
 			return newPrice + price.getSpread() + pips * instrument.getPip();
 		}
+	}
+
+	public State getState() {
+		return state;
 	}
 
 	private void initOrder() {
@@ -259,12 +259,12 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 			resetState(true);
 			break;
 		case NEWS_IN_5:
-			log.info("New will be published in 5 minutes.");
+			log.info("News will be published in 5 minutes.");
 			resetState(false);
 			taskScheduler.schedule(() -> {
 				log.info("Returning to work after news");
 				processEvent(Event.WORK);
-			}, DateTime.now().plusHours(2).toDate());
+			}, DateTime.now().plusMinutes(2).toDate());
 			break;
 		case TREND_IS_HOT:
 			resetState(false);
@@ -306,7 +306,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 
 	private void resetState(boolean lookForNewTrend) {
 		if (!State.INACTIVE.equals(state)) {
-			log.error("trace", new Exception());
+			log.error("trace", new Exception("Trace exception"));
 			log.info("Resetting state: closing trades and orders and looking for the last broken 30M fractal...");
 			if (State.TRADE_OPENED.equals(state) || State.ORDER_POSTED.equals(state)) {
 				resetOrder();
@@ -462,7 +462,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		double newStopLoss = getOrderStopLoss();
 		double newPrice = getOrderPrice();
 		double oldStopLoss = order.getStopLoss();
-		double takeProfit = getTakeProfit(newPrice);
+		double takeProfit = getOrderTakeProfit(newPrice);
 		if (State.TRADE_OPENED.equals(state)) {
 			boolean needUpdateStopLoss = openedTrade.getStopLoss() == 0
 					|| newStopLoss * direction > openedTrade.getStopLoss() * direction;
