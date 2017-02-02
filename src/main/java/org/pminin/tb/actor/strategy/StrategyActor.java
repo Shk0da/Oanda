@@ -346,12 +346,6 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 				break;
 			}
 			reportState();
-			setCurrentRate(broken30M);
-			Candle lastConfirmedTrendFractal = mainDao.getLastFractal(steps.tradingStep(), instrument,
-					getMarketDirection());
-			if (lastConfirmedTrendFractal != null) {
-				processConfirmedFractal(new FractalConfirmed(steps.tradingStep(), lastConfirmedTrendFractal));
-			}
 			updateTraderState(StateChange.TREND_CHANGED, broken30M);
 		default:
 			break;
@@ -396,12 +390,6 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		case ORDER_POSTED:
 		case TRADE_OPENED:
 			this.confirmed5M = confirmed5M;
-			if (confirmed5M.getTime().isBefore(vLine.getTime())) {
-				vLine = confirmed5M;
-				Candle lastFractal = mainDao.getLastFractal(steps.tradingStep(), instrument,
-						-confirmed5M.getDirection());
-				processConfirmedFractal(new FractalConfirmed(steps.tradingStep(), lastFractal));
-			}
 			reportState();
 			updateTraderState(StateChange.FRACTAL_CONFIRMED, confirmed5M);
 		default:
