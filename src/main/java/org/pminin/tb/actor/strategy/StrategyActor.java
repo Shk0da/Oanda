@@ -143,8 +143,8 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		log.info("Current rate is " + rate.getCloseMid());
 		order = new Order();
 		order.setInstrument(instrument.toString());
-		order.setSide(getMarketDirection() == DIRECTION_UP ? BUY : SELL);
-		log.info("Order side is set to " + order.getSide());
+		order.setType(getMarketDirection() == DIRECTION_UP ? Order.OrderType.MARKET : Order.OrderType.STOP);
+		log.info("Order side is set to " + order.getType());
 		double balance = accountService.getAccountDetails().getBalance();
 		order.setUnits((int) (balance / 100 * 1000));
 		log.info("Order units is set to " + order.getUnits());
@@ -449,7 +449,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		int direction = getMarketDirection();
 		double newStopLoss = getOrderStopLoss();
 		double newPrice = getOrderPrice();
-		double oldStopLoss = order.getStopLoss();
+		double oldStopLoss = order.getStopLossOnFill().getPrice();
 		double takeProfit = getOrderTakeProfit(newPrice);
 		if (State.TRADE_OPENED.equals(state)) {
 			boolean needUpdateStopLoss = openedTrade.getStopLoss() == 0
@@ -471,8 +471,8 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 				order.setPrice(newPrice);
 				changed = true;
 				log.info(String.format("Order new price is set to %.5f", newPrice));
-				if (order.getTakeProfit() != takeProfit) {
-					order.setTakeProfit(takeProfit);
+				if (order.getTakeProfitOnFill().getPrice() != takeProfit) {
+					order.setTakeProfitOnFill(new Order.Details(takeProfit));
 					log.info(String.format("Order new take profit is set to %.5f", takeProfit));
 				}
 			}
@@ -486,11 +486,11 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 				changed = true;
 			}
 			if (changed) {
-				order.setStopLoss(newStopLoss);
+				order.setStopLossOnFill(new Order.Details(newStopLoss));
 				log.info("New order stop loss is set to " + newStopLoss);
 			} else {
 				log.info(String.format("Order price is %.5f and stop loss is %.5f. New stop loss %.5f will not be set",
-						order.getPrice(), order.getStopLoss(), newStopLoss));
+						order.getPrice(), order.getStopLossOnFill().getPrice(), newStopLoss));
 			}
 			if (changed && State.ORDER_POSTED.equals(state)) {
 				if (accountService.updateOrder(order) == null) {
