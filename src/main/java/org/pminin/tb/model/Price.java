@@ -20,6 +20,8 @@ public class Price {
 	private List<Map<String, Object>> bids;
 	private List<Map<String, Object>> asks;
 	private String halted;
+	private double closeoutAsk;
+	private double closeoutBid;
 
 	@Data
 	@AllArgsConstructor
@@ -29,10 +31,14 @@ public class Price {
 	}
 
 	public double getBid() {
+		if (getBids().isEmpty()) return closeoutBid;
+
 		return (double) getBids().get(0).get("price");
 	}
 
 	public double getAsk() {
+		if (getAsks().isEmpty()) return closeoutAsk;
+
 		return (double) getAsks().get(0).get("price");
 	}
 

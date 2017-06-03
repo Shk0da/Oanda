@@ -64,12 +64,62 @@ public class Candle {
 		}
 
 	}
+
+	/*
+	* "complete": false,
+      "mid": {
+        "c": "1.09961",
+        "h": "1.09961",
+        "l": "1.09958",
+        "o": "1.09954"
+      },
+      "time": "2016-10-17T15:17:20.000000000Z",
+      "volume": 3
+	* */
+
 	@JsonDeserialize(using = UnixTimestampDeserializer.class)
 	private DateTime time;
-	private double openMid;
+	/*private double openMid;
 	private double highMid;
 	private double lowMid;
-	private double closeMid;
+	private double closeMid;*/
+
+	private double o;
+	private double h;
+	private double l;
+	private double c;
+
+	public void setOpenMid(double val) {
+		this.o = val;
+	}
+
+	public void setHighMid(double val) {
+		this.h = val;
+	}
+
+	public void setLowMid(double val) {
+		this.l = val;
+	}
+
+	public void setCloseMid(double val) {
+		this.c = val;
+	}
+
+	public double getOpenMid() {
+		return o;
+	}
+
+	public double getHighMid() {
+		return h;
+	}
+
+	public double getLowMid() {
+		return l;
+	}
+
+	public double getCloseMid() {
+		return c;
+	}
 
 	private int volume;
 	private boolean complete;
@@ -95,10 +145,4 @@ public class Candle {
 		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
 	}
 
-	@Override
-	public String toString() {
-		return "Candle [time=" + time + ", open=" + openMid + ", high=" + highMid + ", low=" + lowMid + ", close=" + closeMid
-				+ ", volume=" + volume + ", complete=" + complete + ", broken=" + broken + ", brokenTime=" + brokenTime
-				+ ", direction=" + direction + "]";
-	}
 }
