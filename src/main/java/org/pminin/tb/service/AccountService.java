@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.joda.time.DateTime;
 import org.pminin.tb.constants.Step;
-import org.pminin.tb.model.AccountDetails;
+import org.pminin.tb.model.Accounts;
 import org.pminin.tb.model.CalendarEvent;
 import org.pminin.tb.model.Candle.Candles;
 import org.pminin.tb.model.Instrument;
@@ -27,7 +27,7 @@ public interface AccountService {
 
 	Order createOrder(Order order);
 
-	AccountDetails getAccountDetails();
+	Accounts getAccountDetails();
 
 	Candles getCandles(Step step, DateTime start, Instrument instrument);
 

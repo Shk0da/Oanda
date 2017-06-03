@@ -20,16 +20,37 @@ public class Instrument {
 	@NoArgsConstructor
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class Instruments {
-		private List<Instrument> instruments = new ArrayList<Instrument>();
+		private List<Instrument> instruments = new ArrayList<>();
 	}
 
-	private String instrument;
-
 	private String displayName;
+	private int displayPrecision;
+	private double marginRate;
+	private int maximumOrderUnits;
+	private int maximumPositionSize;
+	private double maximumTrailingStopDistance;
+	private int minimumTradeSize;
+	private double minimumTrailingStopDistance;
+	private String name;
+	private int pipLocation;
+	private int tradeUnitsPrecision;
+	private String type;
 
-	private double pip;
+	public String getInstrument() {
+		return name;
+	}
 
-	private double maxTradeUnits;
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public double getPip() {
+		return 10^pipLocation;
+	}
+
+	public double getMaxTradeUnits() {
+		return maximumOrderUnits;
+	}
 
 	@Override
 	public boolean equals(Object obj) {
@@ -40,10 +61,10 @@ public class Instrument {
 		if (getClass() != obj.getClass())
 			return false;
 		Instrument other = (Instrument) obj;
-		if (instrument == null) {
-			if (other.instrument != null)
+		if (getInstrument() == null) {
+			if (other.getInstrument() != null)
 				return false;
-		} else if (!instrument.equals(other.instrument))
+		} else if (!getInstrument().equals(other.getInstrument()))
 			return false;
 		return true;
 	}
@@ -52,12 +73,12 @@ public class Instrument {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((instrument == null) ? 0 : instrument.hashCode());
+		result = prime * result + ((getInstrument() == null) ? 0 : getInstrument().hashCode());
 		return result;
 	}
 
 	@Override
 	public String toString() {
-		return instrument;
+		return getInstrument();
 	}
 }

@@ -11,7 +11,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.pminin.tb.constants.Constants;
 import org.pminin.tb.constants.Step;
-import org.pminin.tb.model.AccountDetails;
+import org.pminin.tb.model.Accounts;
 import org.pminin.tb.model.CalendarEvent;
 import org.pminin.tb.model.Candle;
 import org.pminin.tb.model.Candle.Candles;
@@ -47,14 +47,14 @@ import com.typesafe.config.ConfigFactory;
 @Scope("singleton")
 public class OandaAccountService implements AccountService {
 
-	private static final String ACCOUNT_DETAILS_API = "v1/accounts/%s";
+	private static final String ACCOUNT_DETAILS_API = "v3/accounts/%s"; //v1/accounts/%s
 
-	private static final String PRICES_API = "v1/prices?instruments=%s";
-	private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d";
-	private static final String INSTRUMENTS_API = "v1/instruments?accountId=%s&instruments=%s_%s";
-	private static final String INSTRUMENTS_API_1 = "v1/instruments?accountId=%s&instruments=%s";
-	private static final String CANDLES_API = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
-	private static final String CANDLES_API_COUNT = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&count=%d";
+	private static final String PRICES_API = "v3/accounts/%s/pricing?instruments=%s";//"v1/prices?instruments=%s";
+	private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d"; //вроде робит
+	private static final String INSTRUMENTS_API = "v3/accounts/%s/instruments?instruments=%s_%s";//"v1/instruments?accountId=%s&instruments=%s_%s";
+	private static final String INSTRUMENTS_API_1 = "v3/accounts/%s/instruments?instruments=%s";//"v1/instruments?accountId=%s&instruments=%s";
+	private static final String CANDLES_API = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b"; //вроде тоже робит
+	private static final String CANDLES_API_COUNT = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&count=%d"; //тоже должнопше
 
 	@Autowired
 	Logger logger;
@@ -127,9 +127,9 @@ public class OandaAccountService implements AccountService {
 	}
 
 	@Override
-	public AccountDetails getAccountDetails() {
-		Optional<AccountDetails> response = getResponse(accountUrl(), HttpMethod.GET, headers(), AccountDetails.class);
-		return response.orElse(new AccountDetails());
+	public Accounts getAccountDetails() {
+		Optional<Accounts> response = getResponse(accountUrl(), HttpMethod.GET, headers(), Accounts.class);
+		return response.orElse(new Accounts());
 	}
 
 	private Candles getCandles(Step step, DateTime start, DateTime end, Instrument instrument, boolean includeFirst) {
@@ -218,7 +218,7 @@ public class OandaAccountService implements AccountService {
 
 	@Override
 	public Price getPrice(Instrument instrument) {
-		String url = apiUrl() + String.format(PRICES_API, instrument.toString());
+		String url = apiUrl() + String.format(PRICES_API, accountId(), instrument.toString());
 		Optional<Prices> response = getResponse(url, HttpMethod.GET, headers(), Prices.class);
 		if (response.isPresent()) {
 			Optional<Price> priceOpt = response.get().getPrices().stream().findFirst();
