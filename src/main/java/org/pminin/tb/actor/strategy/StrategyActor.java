@@ -449,7 +449,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		int direction = getMarketDirection();
 		double newStopLoss = getOrderStopLoss();
 		double newPrice = getOrderPrice();
-		double oldStopLoss = order.getStopLossOnFill().getPrice();
+		double oldStopLoss = order.getStopLossOnFill() != null ? order.getStopLossOnFill().getPrice() : 0;
 		double takeProfit = getOrderTakeProfit(newPrice);
 		if (State.TRADE_OPENED.equals(state)) {
 			boolean needUpdateStopLoss = openedTrade.getStopLoss() == 0

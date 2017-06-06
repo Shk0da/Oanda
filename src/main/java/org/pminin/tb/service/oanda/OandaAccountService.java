@@ -49,8 +49,8 @@ public class OandaAccountService implements AccountService {
     private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d"; //вроде робит
     private static final String INSTRUMENTS_API = "v3/accounts/%s/instruments?instruments=%s_%s";//"v1/instruments?accountId=%s&instruments=%s_%s";
     private static final String INSTRUMENTS_API_1 = "v3/accounts/%s/instruments?instruments=%s";//"v1/instruments?accountId=%s&instruments=%s";
-    private static final String CANDLES_API = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b"; //вроде тоже робит
-    private static final String CANDLES_API_COUNT = "v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&count=%d"; //тоже должнопше
+    private static final String CANDLES_API = "v3/instruments/%s/candles?price=M&granularity=%s&from=%d&to=%d&includeFirst=%b";//"v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
+    private static final String CANDLES_API_COUNT = "v3/instruments/%s/candles?price=M&granularity=%s&count=%d";
 
     @Autowired
     Logger logger;
@@ -74,13 +74,13 @@ public class OandaAccountService implements AccountService {
     }
 
     private String candlesUrl(Step step, DateTime start, DateTime end, Instrument instrument, boolean includeFirst) {
-        return apiUrl() + String.format(CANDLES_API, accountId(), step.toString(), instrument.getInstrument(),
-                start.toDate().getTime() / 1000, end.toDate().getTime() / 1000, includeFirst);
+        return apiUrl() + String.format(CANDLES_API, instrument.getInstrument(), step.toString(),
+                 start.toDate().getTime() / 1000, end.toDate().getTime() / 1000, includeFirst);
     }
 
     private String candlesUrl(Step step, int count, Instrument instrument) {
         return apiUrl()
-                + String.format(CANDLES_API_COUNT, accountId(), step.toString(), instrument.getInstrument(), count);
+                + String.format(CANDLES_API_COUNT, instrument.getInstrument(), step.toString(), count);
     }
 
     @Override
