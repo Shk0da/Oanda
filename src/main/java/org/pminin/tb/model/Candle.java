@@ -37,7 +37,7 @@ public class Candle {
         @JsonDeserialize(using = CustomGranularityDeserializer.class)
         private Step granularity;
 
-        private List<Candle> candles = new ArrayList<Candle>();
+        private List<Candle> candles = new ArrayList<>();
 
         @Override
         public String toString() {
@@ -66,6 +66,21 @@ public class Candle {
 
     }
 
+    public static class StringDateTimeDeserializer extends JsonDeserializer<DateTime> {
+        @Override
+        public DateTime deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
+                throws IOException, JsonProcessingException {
+            try {
+                String date = jsonparser.getText();
+                return new DateTime(date, DateTimeZone.getDefault());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+    }
+
+    @JsonDeserialize(using = StringDateTimeDeserializer.class)
     private DateTime time;
     private double o;
     private double h;
@@ -124,17 +139,8 @@ public class Candle {
         time = new DateTime(date.getTime(), DateTimeZone.getDefault());
     }
 
-    //TODO json to Date
-    public void setTime(DateTime date) {
-        time = date;
-    }
-
-    public void setTime(Date date) {
+    public void setDateTime(Date date) {
         time = new DateTime(date.getTime(), DateTimeZone.getDefault());
-    }
-
-    public void setTime(String date) {
-        time = new DateTime(date, DateTimeZone.getDefault());
     }
 
 }
