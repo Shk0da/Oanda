@@ -109,25 +109,7 @@ public class OandaAccountService implements AccountService {
         headers.set("Content-Type", "application/json");
 
         order.setCancelledTime(DateTime.now().plusDays(2).getMillis());
-        order.setType(Order.OrderType.MARKET);
 
-        /*
-          {'order': {
-                   'timeInForce': 'FOK',
-                   'instrument': 'EUR_USD',
-                   'positionFill': 'DEFAULT',
-                   'units': '10000',
-                   'type': 'MARKET',
-                   'takeProfitOnFill': {
-                       'timeInForce': 'GTC',
-                       'price': '1.10000'}
-                   }
-                   'stopLossOnFill': {
-                       'timeInForce': 'GTC',
-                       'price': '1.07000'}
-                   }
-               }
-	    * */
         Map<String, Object> orderData = Maps.newHashMap();
         orderData.put("timeInForce", order.getTimeInForce());
         orderData.put("instrument", order.getInstrument());

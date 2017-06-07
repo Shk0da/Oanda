@@ -67,7 +67,7 @@ public class TraderRestController {
 	private Object createOrder() {
 		Order order = new Order();
 		order.setInstrument("EUR_USD");
-		order.setType(Order.OrderType.LIMIT);
+		order.setType(Order.OrderType.MARKET);
 
 		double balance = accountService.getAccountDetails().getBalance();
 		order.setUnits((int) (balance / 100 * 1000));

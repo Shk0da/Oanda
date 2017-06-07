@@ -40,7 +40,7 @@ public class Order {
             this.price = price;
         }
 
-        private Double price;
+        private double price;
         private TimeInForce timeInForce = TimeInForce.GTC;
         //private long gtdTime;
     }
@@ -65,8 +65,8 @@ public class Order {
     //private String gtdTime;
     private OrderPositionFill positionFill = OrderPositionFill.DEFAULT;
     //private OrderTriggerCondition triggerCondition;
-    private Details takeProfitOnFill;
-    private Details stopLossOnFill;
+    private Details takeProfitOnFill = new Details();
+    private Details stopLossOnFill = new Details();
     //private Details trailingStopLossOnFill;
     //private int fillingTransactionID;
     //private long filledTime;

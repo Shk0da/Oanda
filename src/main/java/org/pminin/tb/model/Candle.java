@@ -66,20 +66,6 @@ public class Candle {
 
     }
 
-    public static class StringDateTimeDeserializer extends JsonDeserializer<DateTime> {
-        @Override
-        public DateTime deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
-                throws IOException, JsonProcessingException {
-            try {
-                String date = jsonparser.getText();
-                return new DateTime(date, DateTimeZone.getDefault());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-        }
-    }
-
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

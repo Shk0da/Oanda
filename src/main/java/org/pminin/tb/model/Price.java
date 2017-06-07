@@ -2,21 +2,43 @@ package org.pminin.tb.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.joda.time.DateTime;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Price {
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Bid {
+        private double price;
+        private int liquidity;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Ask {
+        private double price;
+        private int liquidity;
+    }
+
     private String instrument;
-    private String time;
-    private List<Map<String, Object>> bids;
-    private List<Map<String, Object>> asks;
+    @JsonDeserialize(using = StringDateTimeDeserializer.class)
+    private DateTime time;
+    private List<Bid> bids;
+    private List<Ask> asks;
     private double closeoutAsk;
     private double closeoutBid;
 
@@ -30,13 +52,13 @@ public class Price {
     public double getBid() {
         if (getBids().isEmpty()) return closeoutBid;
 
-        return (double) getBids().get(0).get("price");
+        return getBids().get(0).getPrice();
     }
 
     public double getAsk() {
         if (getAsks().isEmpty()) return closeoutAsk;
 
-        return (double) getAsks().get(0).get("price");
+        return getAsks().get(0).getPrice();
     }
 
     public double getSpread() {
