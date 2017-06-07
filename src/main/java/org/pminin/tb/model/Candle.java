@@ -80,43 +80,51 @@ public class Candle {
         }
     }
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Mid {
+        private double o;
+        private double h;
+        private double l;
+        private double c;
+    }
+
     @JsonDeserialize(using = StringDateTimeDeserializer.class)
     private DateTime time;
-    private double o;
-    private double h;
-    private double l;
-    private double c;
+    private Mid mid = new Mid();
 
     public void setOpenMid(double val) {
-        this.o = val;
+        this.mid.o = val;
     }
 
     public void setHighMid(double val) {
-        this.h = val;
+        this.mid.h = val;
     }
 
     public void setLowMid(double val) {
-        this.l = val;
+        this.mid.l = val;
     }
 
     public void setCloseMid(double val) {
-        this.c = val;
+        this.mid.c = val;
     }
 
     public double getOpenMid() {
-        return o;
+        return mid.o;
     }
 
     public double getHighMid() {
-        return h;
+        return mid.h;
     }
 
     public double getLowMid() {
-        return l;
+        return mid.l;
     }
 
     public double getCloseMid() {
-        return c;
+        return mid.c;
     }
 
     private int volume;
