@@ -143,7 +143,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		log.info("Current rate is " + rate.getCloseMid());
 		order = new Order();
 		order.setInstrument(instrument.toString());
-		order.setType(getMarketDirection() == DIRECTION_UP ? Order.OrderType.TAKE_PROFIT : Order.OrderType.STOP_LOSS);
+		order.setType(getMarketDirection() == DIRECTION_UP ? Order.OrderType.LIMIT : Order.OrderType.STOP);
 		log.info("Order side is set to " + order.getType());
 		double balance = accountService.getAccountDetails().getBalance();
 		order.setUnits((int) (balance / 100 * 1000));

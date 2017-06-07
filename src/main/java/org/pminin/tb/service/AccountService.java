@@ -1,27 +1,20 @@
 package org.pminin.tb.service;
 
-import java.util.List;
-
-import org.joda.time.DateTime;
-import org.pminin.tb.constants.Step;
-import org.pminin.tb.model.Accounts;
-import org.pminin.tb.model.CalendarEvent;
-import org.pminin.tb.model.Candle.Candles;
-import org.pminin.tb.model.Instrument;
-import org.pminin.tb.model.Order;
-import org.pminin.tb.model.Order.Orders;
-import org.pminin.tb.model.Pivot;
-import org.pminin.tb.model.Price;
-import org.pminin.tb.model.Trade;
-import org.pminin.tb.model.Trade.Trades;
-
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.joda.time.DateTime;
+import org.pminin.tb.constants.Step;
+import org.pminin.tb.model.*;
+import org.pminin.tb.model.Candle.Candles;
+import org.pminin.tb.model.Order.Orders;
+import org.pminin.tb.model.Trade.Trades;
+
+import java.util.List;
 
 public interface AccountService {
 
-	static Config config = ConfigFactory.load().getConfig("account");
-	static String provider = config.getString("provider");
+    Config config = ConfigFactory.load().getConfig("account");
+    String provider = config.getString("provider");
 
 	void closeOrdersAndTrades(Instrument instrument);
 
