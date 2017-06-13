@@ -2,28 +2,28 @@ package org.pminin.tb.constants;
 
 public interface Constants {
 
-	static final String ACTOR_PATH_HEAD = "akka://TradingSystem/user/";
+    String ACTOR_PATH_HEAD = "akka://TradingSystem/user/";
 
-	static final String COLLECTOR = "collector";
-	static final String ANALYZER = "analyzer";
-	static final String STRATEGY = "strategy";
-	static final String NEWSCHECK = "newscheck";
+    String COLLECTOR = "collector";
+    String ANALYZER = "analyzer";
+    String STRATEGY = "strategy";
+    String NEWSCHECK = "newscheck";
 
-	static final String PIVOT = "pivot";
-	static final String TRADE_CHECK = "tradecheck";
-	static final String ORDER_CHECK = "ordercheck";
+    String PIVOT = "pivot";
+    String TRADE_CHECK = "tradecheck";
+    String ORDER_CHECK = "ordercheck";
 
-	static final String CONFIRM_FRACTAL = "confirmfractal";
-	static final String BREAK_FRACTAL = "breakfractal";
+    String CONFIRM_FRACTAL = "confirmfractal";
+    String BREAK_FRACTAL = "breakfractal";
 
-	static final int DIRECTION_UP = 1;
-	static final int DIRECTION_DOWN = -1;
+    int DIRECTION_UP = 1;
+    int DIRECTION_DOWN = -1;
 
-	static final String SELL = "sell";
-	static final String BUY = "buy";
-	static final String TYPE_MARKET = "market";
-	static final String TYPE_MARKETIFTOUCHED = "marketIfTouched";
-	static final String TYPE_LIMIT = "stop";
-	static final String STOP_LOSS = "STOP_LOSS";
+    String SELL = "sell";
+    String BUY = "buy";
+    String TYPE_MARKET = "market";
+    String TYPE_MARKETIFTOUCHED = "marketIfTouched";
+    String TYPE_LIMIT = "stop";
+    String STOP_LOSS = "STOP_LOSS";
 
 }

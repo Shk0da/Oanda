@@ -1,17 +1,17 @@
 package org.pminin.tb;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.pminin.tb.model.Instrument;
 import org.pminin.tb.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Repository
 public class InstrumentStorage {
 
-	private final Map<String, Instrument> instruments = new HashMap<String, Instrument>();
+	private final Map<String, Instrument> instruments = new HashMap<>();
 
 	@Autowired
 	AccountService accountService;

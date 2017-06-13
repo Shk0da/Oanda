@@ -6,8 +6,8 @@ public enum Step {
 
 	private final String readable;
 
-	private Step(String readable) {
-		this.readable = readable;
+    Step(String readable) {
+        this.readable = readable;
 	}
 
 	public String toReadable() {

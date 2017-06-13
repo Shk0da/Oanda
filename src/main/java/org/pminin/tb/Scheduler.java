@@ -1,9 +1,8 @@
 package org.pminin.tb;
 
-import java.util.Date;
-
-import javax.annotation.PostConstruct;
-
+import akka.actor.ActorSystem;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.joda.time.DateTime;
 import org.pminin.tb.constants.Constants;
 import org.pminin.tb.constants.Event;
@@ -15,10 +14,8 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-
-import akka.actor.ActorSystem;
+import javax.annotation.PostConstruct;
+import java.util.Date;
 
 @Component(value = "scheduler")
 public class Scheduler implements Constants {

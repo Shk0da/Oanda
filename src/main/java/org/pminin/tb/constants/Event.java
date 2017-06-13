@@ -1,12 +1,11 @@
 package org.pminin.tb.constants;
 
-import org.pminin.tb.model.Candle;
-import org.pminin.tb.model.Pivot;
-import org.pminin.tb.model.Trade;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.pminin.tb.model.Candle;
+import org.pminin.tb.model.Pivot;
+import org.pminin.tb.model.Trade;
 
 public enum Event {
 

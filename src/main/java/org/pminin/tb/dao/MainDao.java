@@ -1,31 +1,11 @@
 package org.pminin.tb.dao;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.pminin.tb.StrategySteps;
 import org.pminin.tb.constants.Step;
-import org.pminin.tb.model.Candle;
+import org.pminin.tb.model.*;
 import org.pminin.tb.model.Candle.Candles;
-import org.pminin.tb.model.Instrument;
-import org.pminin.tb.model.Order;
-import org.pminin.tb.model.Pivot;
-import org.pminin.tb.model.PostOrderResponse;
 import org.pminin.tb.util.ModelUtil;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,61 +18,37 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSourceUtils;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.stereotype.Repository;
 
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.stream.Stream;
+
 @Repository("mainDao")
 public class MainDao {
 
-	private class CandleRowMapper implements RowMapper<Candle> {
-
-		@Override
-		public Candle mapRow(ResultSet rs, int rowNum) throws SQLException {
-			Candle candle = new Candle();
-			candle.setTime(new DateTime(rs.getTimestamp(1), DateTimeZone.getDefault()));
-			candle.setOpenMid(rs.getFloat(2));
-			candle.setHighMid(rs.getFloat(3));
-			candle.setLowMid(rs.getFloat(4));
-			candle.setCloseMid(rs.getFloat(5));
-			candle.setVolume(rs.getInt(6));
-			candle.setComplete(rs.getBoolean(7));
-			return candle;
-		}
-	}
-
-	private class FractalRowMapper implements RowMapper<Candle> {
-
-		@Override
-		public Candle mapRow(ResultSet rs, int rowNum) throws SQLException {
-			Candle candle = new Candle();
-			candle.setTime(new DateTime(rs.getTimestamp(1), DateTimeZone.getDefault()));
-			candle.setOpenMid(rs.getFloat(2));
-			candle.setHighMid(rs.getFloat(3));
-			candle.setLowMid(rs.getFloat(4));
-			candle.setCloseMid(rs.getFloat(5));
-			candle.setVolume(rs.getInt(6));
-			candle.setComplete(rs.getBoolean(7));
-			candle.setBroken(rs.getBoolean(8));
-			candle.setBrokenTime(new DateTime(rs.getTimestamp(9), DateTimeZone.getDefault()));
-			candle.setDirection(rs.getInt(10));
-			return candle;
-		}
-	}
 	private static final String PH_INSTRUMENT = "%INSTRUMENT%";
 	private static final String PH_STEP = "%STEP%";
 	private static final String PH_CANDLES = "%CANDLES%";
 	private static final String PH_PIVOT = "%PIVOT%";
 	private static final String PH_ORDERS = "%ORDERS%";
-
 	private static final String PH_FRACTALS = "%FRACTALS%";
 	private static final String PARAM_DIRECTION = "dir";
 	private static final String PARAM_BREAKING_TIME = "breakingTime";
-
 	private static final String PARAM_FRACTAL_TIME = "fractalTime";
 	private static final String CANDLES_PREFIX = "CANDLES";
 	private static final String PIVOT_PREFIX = "PIVOT";
 	private static final String FRACTALS_PREFIX = "FRACTALS";
-
 	private static final String ORDERS_PREFIX = "ORDERS";
 	@Autowired
-	private StrategySteps steps;
+    Logger logger;
+    @Autowired
+    private StrategySteps steps;
 	private JdbcTemplate jdbcTemplate;
 	private NamedParameterJdbcTemplate npJdbcTemplate;
 	private String createCandlesTableScript;
@@ -110,13 +66,8 @@ public class MainDao {
 	private String getLastFractalScript3;
 	private String getLastFractalScript4;
 	private String createOrdersTableScript;
-
 	private String insertOrderScript;
-
 	private String closeOrderScript;
-
-	@Autowired
-	Logger logger;
 
 	public int breakFractal(Instrument instrument, Step step, Candle fractal) {
 		String script = updateFractalsScript2.replaceAll(PH_STEP, step.toString())
@@ -391,5 +342,40 @@ public class MainDao {
 		this.npJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
 
 	}
+
+    private class CandleRowMapper implements RowMapper<Candle> {
+
+        @Override
+        public Candle mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Candle candle = new Candle();
+            candle.setTime(new DateTime(rs.getTimestamp(1), DateTimeZone.getDefault()));
+            candle.setOpenMid(rs.getFloat(2));
+            candle.setHighMid(rs.getFloat(3));
+            candle.setLowMid(rs.getFloat(4));
+            candle.setCloseMid(rs.getFloat(5));
+            candle.setVolume(rs.getInt(6));
+            candle.setComplete(rs.getBoolean(7));
+            return candle;
+        }
+    }
+
+    private class FractalRowMapper implements RowMapper<Candle> {
+
+        @Override
+        public Candle mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Candle candle = new Candle();
+            candle.setTime(new DateTime(rs.getTimestamp(1), DateTimeZone.getDefault()));
+            candle.setOpenMid(rs.getFloat(2));
+            candle.setHighMid(rs.getFloat(3));
+            candle.setLowMid(rs.getFloat(4));
+            candle.setCloseMid(rs.getFloat(5));
+            candle.setVolume(rs.getInt(6));
+            candle.setComplete(rs.getBoolean(7));
+            candle.setBroken(rs.getBoolean(8));
+            candle.setBrokenTime(new DateTime(rs.getTimestamp(9), DateTimeZone.getDefault()));
+            candle.setDirection(rs.getInt(10));
+            return candle;
+        }
+    }
 
 }

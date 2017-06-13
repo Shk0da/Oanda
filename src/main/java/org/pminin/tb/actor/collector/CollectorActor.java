@@ -1,5 +1,7 @@
 package org.pminin.tb.actor.collector;
 
+import akka.actor.ActorRef;
+import akka.actor.Props;
 import org.pminin.tb.StrategySteps;
 import org.pminin.tb.actor.SpringDIActor;
 import org.pminin.tb.actor.abstracts.AbstractInstrumentActor;
@@ -8,9 +10,6 @@ import org.pminin.tb.model.Instrument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import akka.actor.ActorRef;
-import akka.actor.Props;
 
 @Component("CollectorActor")
 @Scope("prototype")

@@ -1,26 +1,19 @@
 package org.pminin.tb.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.joda.time.DateTime;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.joda.time.DateTime;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class Trade {
-	@Data
-	@NoArgsConstructor
-	@AllArgsConstructor
-	public static class Trades {
-		List<Trade> trades = new ArrayList<>();
-	}
+    private String id;
 
 	/*
 	  "trades": [
@@ -38,8 +31,6 @@ public class Trade {
 		}
 	  ]
 	*/
-
-	private String id;
 	private int currentUnits;
 	private double financing;
 	private int initialUnits;
@@ -59,6 +50,13 @@ public class Trade {
 	public void setStopLoss(double val) {
 		this.unrealizedPL = (-1) * (price - val);
 	}
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Trades {
+        List<Trade> trades = new ArrayList<>();
+    }
 
 	/*private String id;
 	private int units;

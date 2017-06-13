@@ -1,12 +1,12 @@
 package org.pminin.tb.util;
 
+import org.pminin.tb.model.Candle;
+import org.pminin.tb.model.Candle.Candles;
+
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import org.pminin.tb.model.Candle;
-import org.pminin.tb.model.Candle.Candles;
 
 public class ModelUtil {
 

@@ -1,7 +1,5 @@
 package org.pminin.tb.actor.collector;
 
-import java.util.List;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.pminin.tb.actor.abstracts.StepActor;
@@ -16,6 +14,8 @@ import org.pminin.tb.util.ModelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component("StepCollectorActor")
 @Scope("prototype")

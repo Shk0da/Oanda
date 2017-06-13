@@ -1,5 +1,9 @@
 package org.pminin.tb;
 
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.pminin.tb.actor.InstrumentActor;
 import org.pminin.tb.actor.SpringDIActor;
 import org.pminin.tb.model.Instrument;
@@ -13,17 +17,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-
 @EnableAutoConfiguration
 @Configuration
 @EnableScheduling
 public class ApplicationConfiguration {
+
 	private static final Config config = ConfigFactory.load();
+
 	@Autowired
 	private ApplicationContext applicationContext;
 

@@ -1,27 +1,18 @@
 package org.pminin.tb.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Instrument {
-
-	@Data
-	@AllArgsConstructor
-	@NoArgsConstructor
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class Instruments {
-		private List<Instrument> instruments = new ArrayList<>();
-	}
 
 	private String displayName;
 	private int displayPrecision;
@@ -81,4 +72,12 @@ public class Instrument {
 	public String toString() {
 		return getInstrument();
 	}
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Instruments {
+        private List<Instrument> instruments = new ArrayList<>();
+    }
 }

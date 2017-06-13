@@ -1,15 +1,14 @@
 package org.pminin.tb.actor;
 
-import java.lang.reflect.InvocationTargetException;
-
+import akka.actor.Actor;
+import akka.actor.IndirectActorProducer;
 import org.pminin.tb.ApplicationContextProvider;
 import org.pminin.tb.constants.Step;
 import org.pminin.tb.model.Instrument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import akka.actor.Actor;
-import akka.actor.IndirectActorProducer;
+import java.lang.reflect.InvocationTargetException;
 
 public class SpringDIActor implements IndirectActorProducer {
 

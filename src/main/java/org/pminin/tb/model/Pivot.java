@@ -1,33 +1,26 @@
 package org.pminin.tb.model;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class Pivot {
 
-	private static final Logger log = LoggerFactory.getLogger(Pivot.class);
-
 	public static final int TREND_UP = 1;
 	public static final int TREND_DOWN = -1;
-
-	private DateTime time;
+    private static final Logger log = LoggerFactory.getLogger(Pivot.class);
+    private DateTime time;
 	private Instrument instrument;
 
 	private double r3;
@@ -47,6 +40,10 @@ public class Pivot {
 	public Date getDateTime() {
 		return time.toDate();
 	}
+
+    public void setDateTime(Date date) {
+        time = new DateTime(date.getTime(), DateTimeZone.getDefault());
+    }
 
 	private double getNearest(double value, double spread, int trend, List<Double> points) {
 		double defaultValue = value + value * instrument.getPip() * 2 * trend;
@@ -99,9 +96,5 @@ public class Pivot {
 		points.add(s3);
 
 		return getNearest(value, spread, trend, points);
-	}
-
-	public void setDateTime(Date date) {
-		time = new DateTime(date.getTime(), DateTimeZone.getDefault());
 	}
 }

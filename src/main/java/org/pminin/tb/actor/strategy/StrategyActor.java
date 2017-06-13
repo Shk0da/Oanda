@@ -1,8 +1,5 @@
 package org.pminin.tb.actor.strategy;
 
-import java.text.ParseException;
-import java.util.Date;
-
 import org.joda.time.DateTime;
 import org.pminin.tb.StrategySteps;
 import org.pminin.tb.actor.abstracts.AbstractInstrumentActor;
@@ -12,21 +9,16 @@ import org.pminin.tb.constants.Event.FractalBroken;
 import org.pminin.tb.constants.Event.FractalConfirmed;
 import org.pminin.tb.constants.Event.TradeOpened;
 import org.pminin.tb.dao.MainDao;
-import org.pminin.tb.model.Candle;
-import org.pminin.tb.model.Instrument;
-import org.pminin.tb.model.Order;
-import org.pminin.tb.model.Pivot;
-import org.pminin.tb.model.Price;
-import org.pminin.tb.model.State;
-import org.pminin.tb.model.StateChange;
-import org.pminin.tb.model.Trade;
-import org.pminin.tb.model.TradingState;
+import org.pminin.tb.model.*;
 import org.pminin.tb.service.AccountService;
 import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
+
+import java.text.ParseException;
+import java.util.Date;
 
 @Component("StrategyActor")
 @Scope("prototype")
@@ -70,6 +62,30 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 
 	public Candle getCurrentRate() {
 		return rate;
+	}
+
+	private void setCurrentRate(Candle rate) {
+		if (heartbeat) {
+			log.info(String.format("price: %.5f", rate.getCloseMid()));
+		}
+		switch (state) {
+			case INACTIVE:
+			case WAITING_FOR_TREND:
+				log.debug("Skipping curernt state as the state is incorrect");
+				break;
+			case WAITING_FOR_VERTICAL_LINE:
+				vLine = rate;
+				state = State.WAITING_FOR_FRACTALS;
+				log.info(String.format("Got new vertical line %s. Waiting for fractals...", vLine.getTime()));
+				reportState();
+			case WAITING_FOR_FRACTALS:
+			case TRADING:
+			case ORDER_POSTED:
+			case TRADE_OPENED:
+			default:
+				this.rate = rate;
+				updateTraderState(StateChange.CURRENT_RATE, rate);
+		}
 	}
 
 	public Candle getLastBrokenFractal30M() {
@@ -143,6 +159,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 		log.info("Current rate is " + rate.getCloseMid());
 		order = new Order();
 		order.setInstrument(instrument.toString());
+		order.setPositionFill(Order.OrderPositionFill.DEFAULT);
 		order.setType(getMarketDirection() == DIRECTION_UP ? Order.OrderType.LIMIT : Order.OrderType.STOP);
 		log.info("Order side is set to " + order.getType());
 		double balance = accountService.getAccountDetails().getBalance();
@@ -418,30 +435,6 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 			updateTraderState(StateChange.OPP_FRACTAL_CONFIRMED, confirmedOpp5M);
 		default:
 			break;
-		}
-	}
-
-	private void setCurrentRate(Candle rate) {
-		if (heartbeat) {
-			log.info(String.format("price: %.5f", rate.getCloseMid()));
-		}
-		switch (state) {
-		case INACTIVE:
-		case WAITING_FOR_TREND:
-			log.debug("Skipping curernt state as the state is incorrect");
-			break;
-		case WAITING_FOR_VERTICAL_LINE:
-			vLine = rate;
-			state = State.WAITING_FOR_FRACTALS;
-			log.info(String.format("Got new vertical line %s. Waiting for fractals...", vLine.getTime()));
-			reportState();
-		case WAITING_FOR_FRACTALS:
-		case TRADING:
-		case ORDER_POSTED:
-		case TRADE_OPENED:
-		default:
-			this.rate = rate;
-			updateTraderState(StateChange.CURRENT_RATE, rate);
 		}
 	}
 
