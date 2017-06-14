@@ -15,4 +15,11 @@ public class DateTimeUtil {
         return dateFormatter.print(dateTime);
     }
 
+    public static String rfc3339FromLong(long millis) {
+        DateTime dateTime = new DateTime(millis, DateTimeZone.UTC);
+        DateTimeFormatter dateFormatter = ISODateTimeFormat.dateTime();
+
+        return dateFormatter.print(dateTime);
+    }
+
 }

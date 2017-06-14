@@ -46,8 +46,8 @@ public class AccountRestController {
             String instrument = left + "_" + right;
             List<Candle> candles = Lists.newArrayList();
             candles.addAll(accountService.getCandles(
-                    Step.W,
-                    DateTime.now(DateTimeZone.getDefault()).minusDays(360),
+                    Step.D,
+                    DateTime.now(DateTimeZone.getDefault()).minusDays(365),
                     accountService.getInstrument(instrument)).getCandles());
             prices.put(instrument, candles);
         }

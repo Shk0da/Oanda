@@ -13,7 +13,6 @@ import org.pminin.tb.model.Order.Orders;
 import org.pminin.tb.model.Price.Prices;
 import org.pminin.tb.model.Trade.Trades;
 import org.pminin.tb.service.AccountService;
-import org.pminin.tb.util.DateTimeUtil;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -30,13 +29,12 @@ import java.util.*;
 @Scope("singleton")
 public class OandaAccountService implements AccountService {
 
-    private static final String ACCOUNT_DETAILS_API = "v3/accounts/%s"; //v1/accounts/%s
-
-    private static final String PRICES_API = "v3/accounts/%s/pricing?instruments=%s";//"v1/prices?instruments=%s";
-    private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d"; //вроде робит
-    private static final String INSTRUMENTS_API = "v3/accounts/%s/instruments?instruments=%s_%s";//"v1/instruments?accountId=%s&instruments=%s_%s";
-    private static final String INSTRUMENTS_API_1 = "v3/accounts/%s/instruments?instruments=%s";//"v1/instruments?accountId=%s&instruments=%s";
-    private static final String CANDLES_API = "v3/instruments/%s/candles?price=M&granularity=%s&from=%d&to=%d&includeFirst=%b";//"v1/candles?accountId=%s&candleFormat=midpoint&granularity=%s&instrument=%s&start=%d&end=%d&includeFirst=%b";
+    private static final String ACCOUNT_DETAILS_API = "v3/accounts/%s";
+    private static final String PRICES_API = "v3/accounts/%s/pricing?instruments=%s";
+    private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d";
+    private static final String INSTRUMENTS_API = "v3/accounts/%s/instruments?instruments=%s_%s";
+    private static final String INSTRUMENTS_API_1 = "v3/accounts/%s/instruments?instruments=%s";
+    private static final String CANDLES_API = "v3/instruments/%s/candles?price=M&granularity=%s&from=%d&to=%d&includeFirst=%b";
     private static final String CANDLES_API_COUNT = "v3/instruments/%s/candles?price=M&granularity=%s&count=%d";
 
     @Autowired
@@ -66,8 +64,7 @@ public class OandaAccountService implements AccountService {
     }
 
     private String candlesUrl(Step step, int count, Instrument instrument) {
-        return apiUrl()
-                + String.format(CANDLES_API_COUNT, instrument.getInstrument(), step.toString(), count);
+        return apiUrl() + String.format(CANDLES_API_COUNT, instrument.getInstrument(), step.toString(), count);
     }
 
     @Override
@@ -222,8 +219,8 @@ public class OandaAccountService implements AccountService {
         } catch (RestClientException e) {
             logger.error("Could not get response from " + url, e);
         }
-        Optional<T> result = Optional.ofNullable(response);
-        return result;
+
+        return Optional.ofNullable(response);
     }
 
     @Override
@@ -241,8 +238,7 @@ public class OandaAccountService implements AccountService {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + cfg.getString("token"));
         headers.set("X-Accept-Datetime-Format", "UNIX");
-        HttpEntity<Object> entity = new HttpEntity<>(headers);
-        return entity;
+        return new HttpEntity<>(headers);
     }
 
     private String instrumentsUrl(String pair) {

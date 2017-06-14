@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+//TODO need to implement
 public class Trade {
     private String id;
 
@@ -42,7 +43,6 @@ public class Trade {
 	private State state;
 	private double unrealizedPL;
 
-	//todo EBALA надо тут чет придумать
 	public double getStopLoss() {
 		return (price - Math.abs(unrealizedPL));
 	}

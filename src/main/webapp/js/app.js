@@ -7,32 +7,13 @@ $(document).ready(function ($) {
         account = data;
         $('#accountId').html("ID: " + account.id);
         $('#accountBalance').html(account.balance + " " + account.currency);
-        $('#ordersCount').html(account.orders.length);
-        $('#positionsCount').html(account.positions.length);
-        $('#tradesCount').html(account.trades.length);
+        $('#ordersCount').html(account.pendingOrderCount);
+        $('#positionsCount').html(account.openPositionCount);
+        $('#tradesCount').html(account.openTradeCount);
         $('#lastTransactionID').html(account.lastTransactionID);
     });
 
     $.ajax({url: "/api/candles"}).done(function (data) {
-
-        var backgroundColor = [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(54, 162, 235, 0.2)',
-            'rgba(255, 206, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(255, 159, 64, 0.2)'
-        ];
-
-        var borderColor = [
-            'rgba(255,99,132,1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)'
-        ];
-
         var labels = [];
         var datasets = [];
 
@@ -51,8 +32,8 @@ $(document).ready(function ($) {
                 {
                     label: label,
                     data: values,
-                    backgroundColor: backgroundColor,
-                    borderColor: borderColor,
+                    backgroundColor: ['rgba(' + getRandomInt(1, 255) + ',99,' + getRandomInt(1, 255) + ',0.1)'],
+                    borderColor: ['rgba(' + getRandomInt(1, 255) + ',99,' + getRandomInt(1, 255) + ',1)'],
                     borderWidth: 1
                 }
             );
@@ -101,4 +82,8 @@ function timeConverter(UNIX_timestamp) {
     var sec = a.getSeconds();
 
     return date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec;
+}
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
