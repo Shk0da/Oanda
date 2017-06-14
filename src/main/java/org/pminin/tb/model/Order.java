@@ -79,7 +79,7 @@ public class Order {
     }
 
     public double getUnits() {
-        if (type.equals(OrderType.STOP)) units = units * (-1);
+        if (type.equals(OrderType.STOP)) units = Math.abs(units) * (-1);
         if (type.equals(OrderType.LIMIT)) units = Math.abs(units);
 
         return units;
