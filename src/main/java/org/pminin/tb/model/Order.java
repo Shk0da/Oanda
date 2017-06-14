@@ -1,8 +1,11 @@
 package org.pminin.tb.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.joda.time.DateTime;
+import org.pminin.tb.util.DateTimeUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,28 +16,20 @@ import java.util.List;
 public class Order {
 
     private String id;
-    private long createTime;
+    @JsonDeserialize(using = StringDateTimeDeserializer.class)
+    private DateTime createTime;
     private OrderState state;
     private OrderType type = OrderType.MARKET;
     private String instrument;
     private double units;
     private double price;
-    //private double priceBound;
-    private TimeInForce timeInForce = TimeInForce.FOK;
-    //@JsonDeserialize(using = UnixTimestampDeserializer.class)
-    //private String gtdTime;
+    private TimeInForce timeInForce = TimeInForce.GTD;
+    private String gtdTime = DateTimeUtil.rfc3339Plus2Days();
     private OrderPositionFill positionFill = OrderPositionFill.DEFAULT;
-    //private OrderTriggerCondition triggerCondition;
+    private OrderTriggerCondition triggerCondition = OrderTriggerCondition.DEFAULT;
     private Details takeProfitOnFill = new Details();
     private Details stopLossOnFill = new Details();
-    //private Details trailingStopLossOnFill;
-    //private int fillingTransactionID;
-    //private long filledTime;
-    //private int tradeOpenedID;
-    //private int tradeReducedID;
-    //private int[] tradeClosedIDs;
-    //private int cancellingTransactionID;
-    private long cancelledTime;
+    private String cancelledTime = DateTimeUtil.rfc3339Plus2Days();
 
     public enum OrderState {
         PENDING, FILLED, TRIGGERED, CANCELLED
@@ -66,7 +61,6 @@ public class Order {
         public Details(double price) {
             this.price = price;
         }
-        //private long gtdTime;
     }
 
     @AllArgsConstructor
@@ -75,4 +69,20 @@ public class Order {
     public static class Orders {
         List<Order> orders = new ArrayList<>();
     }
+
+    public void setType(OrderType type) {
+        if (type.equals(OrderType.LIMIT_ORDER)) type = OrderType.LIMIT;
+        if (type.equals(OrderType.STOP_ORDER)) type = OrderType.STOP;
+        if (type.equals(OrderType.MARKET_ORDER)) type = OrderType.MARKET;
+
+        this.type = type;
+    }
+
+    public double getUnits() {
+        if (type.equals(OrderType.STOP)) units = units * (-1);
+        if (type.equals(OrderType.LIMIT)) units = Math.abs(units);
+
+        return units;
+    }
+
 }

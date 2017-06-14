@@ -4,6 +4,7 @@ import jersey.repackaged.com.google.common.collect.Lists;
 import org.pminin.tb.Scheduler;
 import org.pminin.tb.model.Order;
 import org.pminin.tb.service.AccountService;
+import org.pminin.tb.util.DateTimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -68,6 +69,7 @@ public class TraderRestController {
         Order order = new Order();
         order.setInstrument("EUR_USD");
         order.setType(type);
+        order.setCancelledTime(DateTimeUtil.rfc3339Plus2Days());
 
         double balance = accountService.getAccountDetails().getBalance();
         order.setUnits((int) (balance / 100 * 1000));
@@ -84,7 +86,7 @@ public class TraderRestController {
         order.setStopLossOnFill(stopLoss);
 
         order = accountService.createOrder(order);
-        return order != null ? order : "Error occured during order creation";
+        return order != null ? order : "Error occurred during order creation";
     }
 
 }

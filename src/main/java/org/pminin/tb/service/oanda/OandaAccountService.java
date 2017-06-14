@@ -13,6 +13,7 @@ import org.pminin.tb.model.Order.Orders;
 import org.pminin.tb.model.Price.Prices;
 import org.pminin.tb.model.Trade.Trades;
 import org.pminin.tb.service.AccountService;
+import org.pminin.tb.util.DateTimeUtil;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -307,10 +308,9 @@ public class OandaAccountService implements AccountService {
     }
 
     private Map<String, Object> orderFactory(Order order) {
-        order.setCancelledTime(DateTime.now().plusDays(2).getMillis());
-
         Map<String, Object> orderData = Maps.newHashMap();
         orderData.put("timeInForce", order.getTimeInForce());
+        orderData.put("gtdTime", String.valueOf(order.getGtdTime()));
         orderData.put("instrument", order.getInstrument());
         orderData.put("positionFill", order.getPositionFill());
         orderData.put("units", order.getUnits());
