@@ -1,10 +1,8 @@
 package org.pminin.tb.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.joda.time.DateTime;
 import org.pminin.tb.util.DateTimeUtil;
 
 import java.util.ArrayList;
@@ -16,8 +14,8 @@ import java.util.List;
 public class Order {
 
     private String id;
-    @JsonDeserialize(using = StringDateTimeDeserializer.class)
-    private DateTime createTime;
+    private String replacesOrderID;
+    private String createTime;
     private OrderState state;
     private OrderType type = OrderType.MARKET;
     private String instrument;

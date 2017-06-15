@@ -13,6 +13,7 @@ import org.pminin.tb.model.Order.Orders;
 import org.pminin.tb.model.Price.Prices;
 import org.pminin.tb.model.Trade.Trades;
 import org.pminin.tb.service.AccountService;
+import org.pminin.tb.util.DateTimeUtil;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -34,7 +35,7 @@ public class OandaAccountService implements AccountService {
     private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d";
     private static final String INSTRUMENTS_API = "v3/accounts/%s/instruments?instruments=%s_%s";
     private static final String INSTRUMENTS_API_1 = "v3/accounts/%s/instruments?instruments=%s";
-    private static final String CANDLES_API = "v3/instruments/%s/candles?price=M&granularity=%s&from=%d&to=%d&includeFirst=%b";
+    private static final String CANDLES_API = "v3/instruments/%s/candles?price=M&granularity=%s&from=%s&to=%s&includeFirst=%b";
     private static final String CANDLES_API_COUNT = "v3/instruments/%s/candles?price=M&granularity=%s&count=%d";
 
     @Autowired
@@ -60,7 +61,7 @@ public class OandaAccountService implements AccountService {
 
     private String candlesUrl(Step step, DateTime start, DateTime end, Instrument instrument, boolean includeFirst) {
         return apiUrl() + String.format(CANDLES_API, instrument.getInstrument(), step.toString(),
-                start.toDate().getTime() / 1000, end.toDate().getTime() / 1000, includeFirst);
+                DateTimeUtil.rfc3339(start), DateTimeUtil.rfc3339(end), includeFirst);
     }
 
     private String candlesUrl(Step step, int count, Instrument instrument) {
@@ -85,18 +86,6 @@ public class OandaAccountService implements AccountService {
     }
 
     @Override
-    public Order createOrder(Order order) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + cfg.getString("token"));
-        headers.set("X-Accept-Datetime-Format", "UNIX");
-        headers.set("Content-Type", "application/json");
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderFactory(order), headers);
-        Optional<PostOrderResponse> response = getResponse(ordersUrl(), HttpMethod.POST, entity, PostOrderResponse.class);
-        return response.orElse(new PostOrderResponse()).getOrderCreateTransaction();
-    }
-
-    @Override
     public Accounts getAccountDetails() {
         Optional<Accounts> response = getResponse(accountUrl(), HttpMethod.GET, headers(), Accounts.class);
         return response.orElse(new Accounts());
@@ -105,7 +94,7 @@ public class OandaAccountService implements AccountService {
     private Candles getCandles(Step step, DateTime start, DateTime end, Instrument instrument, boolean includeFirst) {
         String candlesUrl = candlesUrl(step, start, end, instrument, includeFirst);
         Optional<Candles> candles = getResponse(candlesUrl, HttpMethod.GET, headers(), Candles.class);
-        return candles.orElse(new Candles(instrument.toString(), step, new ArrayList<Candle>()));
+        return candles.orElse(new Candles(instrument.toString(), step, new ArrayList<>()));
     }
 
     @Override
@@ -261,6 +250,18 @@ public class OandaAccountService implements AccountService {
         return accountUrl() + "/trades";
     }
 
+    @Override
+    public Order createOrder(Order order) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + cfg.getString("token"));
+        headers.set("X-Accept-Datetime-Format", "UNIX");
+        headers.set("Content-Type", "application/json");
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderFactory(order), headers);
+        Optional<PostOrderResponse> response = getResponse(ordersUrl(), HttpMethod.POST, entity, PostOrderResponse.class);
+        return response.orElse(new PostOrderResponse()).getOrderCreateTransaction();
+    }
+
     public Order updateOrder(Order order) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + cfg.getString("token"));
@@ -268,9 +269,26 @@ public class OandaAccountService implements AccountService {
         headers.set("X-Accept-Datetime-Format", "UNIX");
         headers.set("X-HTTP-Method-Override", "PUT");
 
+        boolean orderHasBeenCanceled = true;
+        String orderId = order.getId();
+        Orders orders = getOrders(getInstrument(order.getInstrument()));
+        for (Order item : orders.getOrders()) {
+            if (item.getId().equals(orderId)) {
+                orderHasBeenCanceled = false;
+            }
+            if (item.getReplacesOrderID() != null && item.getReplacesOrderID().equals(orderId)) {
+                order.setId(orderId);
+                orderHasBeenCanceled = false;
+            }
+        }
+
+        if (orderHasBeenCanceled) {
+            return createOrder(order);
+        }
+
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderFactory(order), headers);
         Optional<Order> response = getResponse(updateOrderUrl(order), HttpMethod.PUT, entity, Order.class);
-        return response.orElse(new Order());
+        return response.orElse(order);
     }
 
     private String updateOrderUrl(Order order) {

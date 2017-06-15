@@ -2,11 +2,13 @@ package org.pminin.tb.controller;
 
 import jersey.repackaged.com.google.common.collect.Lists;
 import org.pminin.tb.Scheduler;
+import org.pminin.tb.model.Instrument;
 import org.pminin.tb.model.Order;
 import org.pminin.tb.service.AccountService;
 import org.pminin.tb.util.DateTimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -32,7 +35,8 @@ public class TraderRestController {
         return Lists.newArrayList("startwork",
                 "state",
                 "account",
-                "test?type=(MARKET, LIMIT, STOP, MARKET_IF_TOUCHED, TAKE_PROFIT, STOP_LOSS, TRAILING_STOP_LOSS, MARKET_ORDER, STOP_ORDER, LIMIT_ORDER)",
+                "testCreate?type=(MARKET, LIMIT, STOP, MARKET_IF_TOUCHED, TAKE_PROFIT, STOP_LOSS, TRAILING_STOP_LOSS, MARKET_ORDER, STOP_ORDER, LIMIT_ORDER)",
+                "testUpdate?id=777",
                 "reset"
         );
     }
@@ -43,9 +47,14 @@ public class TraderRestController {
         return "Starting work...";
     }
 
-    @RequestMapping(value = "test", params = {"type"})
+    @RequestMapping(value = "testCreate", params = {"type"})
     public Object test(@RequestParam("type") Order.OrderType type) {
         return createOrder(type);
+    }
+
+    @RequestMapping(value = "testUpdate")
+    public Object testUpdate() {
+        return updateOrder();
     }
 
     @RequestMapping("reset")
@@ -67,7 +76,7 @@ public class TraderRestController {
 
     private Object createOrder(Order.OrderType type) {
         Order order = new Order();
-        order.setInstrument("EUR_USD");
+        order.setInstrument("USD_JPY");
         order.setType(type);
         order.setCancelledTime(DateTimeUtil.rfc3339Plus2Days());
 
@@ -86,6 +95,18 @@ public class TraderRestController {
         order.setStopLossOnFill(stopLoss);
 
         order = accountService.createOrder(order);
+        return order != null ? order : "Error occurred during order creation";
+    }
+
+    private Object updateOrder() {
+        Order.Orders orders = accountService.getOrders(accountService.getInstrument("USD_JPY"));
+
+        if (orders.getOrders().isEmpty()) return "Nothing update";
+
+        Order order = orders.getOrders().get(0);
+        order.setStopLossOnFill(new Order.Details(1.050));
+
+        order = accountService.updateOrder(order);
         return order != null ? order : "Error occurred during order creation";
     }
 

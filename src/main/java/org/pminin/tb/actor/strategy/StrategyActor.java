@@ -480,7 +480,7 @@ public class StrategyActor extends AbstractInstrumentActor implements TradingSta
 			}
 			if (changed) {
 				order.setStopLossOnFill(new Order.Details(newStopLoss));
-				log.info("New order stop loss is set to " + newStopLoss);
+				log.info(String.format("New order stop loss is set to %.5f", newStopLoss));
 			} else {
 				log.info(String.format("Order price is %.5f and stop loss is %.5f. New stop loss %.5f will not be set",
 						order.getPrice(), order.getStopLossOnFill().getPrice(), newStopLoss));

@@ -28,9 +28,12 @@ $(document).ready(function ($) {
                 values[i] = item.closeMid;
             });
 
+            var min = Math.min.apply(Math, values);
+            var max = Math.max.apply(Math, values);
+
             datasets.push(
                 {
-                    label: label,
+                    label: label + "(min: " + min + ", max: " + max + ")",
                     data: values,
                     backgroundColor: ['rgba(' + getRandomInt(1, 255) + ',99,' + getRandomInt(1, 255) + ',0.1)'],
                     borderColor: ['rgba(' + getRandomInt(1, 255) + ',99,' + getRandomInt(1, 255) + ',1)'],
@@ -39,21 +42,11 @@ $(document).ready(function ($) {
             );
         }
 
-        var myChart = new Chart(heartbeat, {
+        new Chart(heartbeat, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: datasets
-            },
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true,
-                            stepSize: 1
-                        }
-                    }]
-                }
             }
         });
     });
