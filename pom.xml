@@ -77,6 +77,11 @@
 			<artifactId>quartz</artifactId>
 			<version>1.5.2</version>
 		</dependency>
+		<dependency>
+			<groupId>eu.verdelhan</groupId>
+			<artifactId>ta4j</artifactId>
+			<version>0.8</version>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>
@@ -140,6 +145,10 @@
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
+		</repository>
+		<repository>
+			<id>sonatype snapshots</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 		</repository>
 	</repositories>
 
