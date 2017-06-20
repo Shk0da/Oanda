@@ -22,7 +22,7 @@ in /src/main/resources/application.conf set
 
 Open your browser: localhost:8080 and enjoy =)
 
-![oanda bot](https://github.com/shk0da/oanda/example.png)
+![oanda bot](https://github.com/Shk0da/oanda/blob/master/example.png)
 
 P.S. if you found bugs tell us about them, please.
 
