@@ -43,8 +43,7 @@ public class InstrumentActor extends AbstractInstrumentActor {
     public void preStart() throws Exception {
         candlesDao.createTables(instrument);
         strategy = getContext().actorOf(Props.create(SpringDIActor.class, StrategyActor.class, instrument), STRATEGY);
-        collector = getContext().actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument),
-                COLLECTOR);
+        collector = getContext().actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument), COLLECTOR);
         analyzer = getContext().actorOf(Props.create(SpringDIActor.class, AnalyzerActor.class, instrument), ANALYZER);
         getContext().actorOf(Props.create(SpringDIActor.class, NewsCheckActor.class, instrument), NEWSCHECK);
     }

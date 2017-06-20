@@ -69,23 +69,6 @@ public class OandaAccountService implements AccountService {
     }
 
     @Override
-    public void closeOrdersAndTrades(Instrument instrument) {
-        Orders orders = getOrders(instrument);
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + cfg.getString("token"));
-        headers.set("X-Accept-Datetime-Format", "UNIX");
-        HttpEntity<Object> entity = new HttpEntity<>(headers);
-
-        orders.getOrders().stream().forEach(order -> {
-            getResponse(updateOrderUrl(order) + "/cancel", HttpMethod.PUT, entity, Map.class);
-        });
-        Trades trades = getTrades(instrument);
-        trades.getTrades().stream().forEach(trade -> {
-            getResponse(updateTradeUrl(trade) + "/close", HttpMethod.PUT, entity, Trade.class);
-        });
-    }
-
-    @Override
     public Accounts getAccountDetails() {
         Optional<Accounts> response = getResponse(accountUrl(), HttpMethod.GET, headers(), Accounts.class);
         return response.orElse(new Accounts());
@@ -214,7 +197,6 @@ public class OandaAccountService implements AccountService {
 
     @Override
     public Trades getTrades(Instrument instrument) {
-
         Optional<Trades> response = getResponse(getTradesUrl(instrument), HttpMethod.GET, headers(), Trades.class);
         return response.orElse(new Trades());
     }
@@ -256,6 +238,7 @@ public class OandaAccountService implements AccountService {
         headers.set("Authorization", "Bearer " + cfg.getString("token"));
         headers.set("X-Accept-Datetime-Format", "UNIX");
         headers.set("Content-Type", "application/json");
+        headers.set("X-HTTP-Method-Override", "POST");
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderFactory(order), headers);
         Optional<PostOrderResponse> response = getResponse(ordersUrl(), HttpMethod.POST, entity, PostOrderResponse.class);
@@ -277,7 +260,7 @@ public class OandaAccountService implements AccountService {
                 orderHasBeenCanceled = false;
             }
             if (item.getReplacesOrderID() != null && item.getReplacesOrderID().equals(orderId)) {
-                order.setId(orderId);
+                order = item;
                 orderHasBeenCanceled = false;
             }
         }
@@ -289,6 +272,22 @@ public class OandaAccountService implements AccountService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderFactory(order), headers);
         Optional<Order> response = getResponse(updateOrderUrl(order), HttpMethod.PUT, entity, Order.class);
         return response.orElse(order);
+    }
+
+    @Override
+    public void closeOrdersAndTrades(Instrument instrument) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + cfg.getString("token"));
+        headers.set("X-Accept-Datetime-Format", "UNIX");
+        HttpEntity<Object> entity = new HttpEntity<>(headers);
+
+        Orders orders = getOrders(instrument);
+        orders.getOrders().stream().forEach(order ->
+                getResponse(updateOrderUrl(order) + "/cancel", HttpMethod.PUT, entity, Map.class));
+
+        Trades trades = getTrades(instrument);
+        trades.getTrades().stream().forEach(trade ->
+                getResponse(updateTradeUrl(trade) + "/close", HttpMethod.PUT, entity, Trade.class));
     }
 
     private String updateOrderUrl(Order order) {
@@ -304,7 +303,7 @@ public class OandaAccountService implements AccountService {
         headers.set("X-HTTP-Method-Override", "PUT");
 
         Map<String, Object> map = new HashMap<>();
-        map.put("stopLoss", String.format("%.5f", trade.getStopLoss()));
+        map.put("stopLoss", new Trade.Details(trade.getStopLoss()));
         HttpEntity<Object> entity = new HttpEntity<>(map, headers);
         Optional<Trade> response = getResponse(updateTradeUrl(trade), HttpMethod.PUT, entity, Trade.class);
         return response.orElse(new Trade());
@@ -322,6 +321,11 @@ public class OandaAccountService implements AccountService {
     }
 
     private Map<String, Object> orderFactory(Order order) {
+
+        if (order.getInstrument().isEmpty()) {
+            logger.debug(order.toString());
+        }
+
         Map<String, Object> orderData = Maps.newHashMap();
         orderData.put("timeInForce", order.getTimeInForce());
         orderData.put("gtdTime", String.valueOf(order.getGtdTime()));

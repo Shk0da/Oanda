@@ -2,13 +2,11 @@ package org.pminin.tb.controller;
 
 import jersey.repackaged.com.google.common.collect.Lists;
 import org.pminin.tb.Scheduler;
-import org.pminin.tb.model.Instrument;
 import org.pminin.tb.model.Order;
 import org.pminin.tb.service.AccountService;
 import org.pminin.tb.util.DateTimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +15,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -76,7 +73,7 @@ public class TraderRestController {
 
     private Object createOrder(Order.OrderType type) {
         Order order = new Order();
-        order.setInstrument("USD_JPY");
+        order.setInstrument("USD_SEK");
         order.setType(type);
         order.setCancelledTime(DateTimeUtil.rfc3339Plus2Days());
 
@@ -84,14 +81,14 @@ public class TraderRestController {
         order.setUnits((int) (balance / 100 * 1000));
 
         order.setPositionFill(Order.OrderPositionFill.DEFAULT);
-        order.setPrice(1.072);
+        order.setPrice(8.072);
 
         Order.Details takeProfit = new Order.Details();
-        takeProfit.setPrice(1.075);
+        takeProfit.setPrice(7.575);
         order.setTakeProfitOnFill(takeProfit);
 
         Order.Details stopLoss = new Order.Details();
-        stopLoss.setPrice(1.070);
+        stopLoss.setPrice(7.070);
         order.setStopLossOnFill(stopLoss);
 
         order = accountService.createOrder(order);

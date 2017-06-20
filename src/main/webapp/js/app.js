@@ -11,6 +11,16 @@ $(document).ready(function ($) {
         $('#positionsCount').html(account.openPositionCount);
         $('#tradesCount').html(account.openTradeCount);
         $('#lastTransactionID').html(account.lastTransactionID);
+
+        var accountInfo = $("#account-info");
+        new Map(Object.entries(data)).forEach(informer);
+        function informer(value, key, map) {
+            if (value instanceof Object) {
+                accountInfo.append("<p>" + key + ": <pre>" + JSON.stringify(value, null, 4) + "</pre></p>");
+            } else {
+                accountInfo.append("<p>" + key + ": " + value + "</p>");
+            }
+        }
     });
 
     $.ajax({url: "/api/candles"}).done(function (data) {

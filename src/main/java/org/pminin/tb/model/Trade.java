@@ -1,10 +1,9 @@
 package org.pminin.tb.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.joda.time.DateTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,44 +11,33 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-//TODO need to implement
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Trade {
-    private String id;
 
-	/*
-	  "trades": [
-		{
-		  "currentUnits": "-600",
-		  "financing": "0.00000",
-		  "id": "6397",
-		  "initialUnits": "-600",
-		  "instrument": "USD_CAD",
-		  "openTime": "2016-06-22T18:41:48.262344782Z",
-		  "price": "1.28241",
-		  "realizedPL": "0.00000",
-		  "state": "OPEN",
-		  "unrealizedPL": "-0.08525"
+	@AllArgsConstructor
+	@NoArgsConstructor
+	@Data
+	public static class Details {
+		private double price;
+		private Order.TimeInForce timeInForce = Order.TimeInForce.GTC;
+
+		public Details(double price) {
+			this.price = price;
 		}
-	  ]
-	*/
+	}
+
+    private String id;
 	private int currentUnits;
 	private double financing;
 	private int initialUnits;
 	private String instrument;
-	@JsonDeserialize(using = UnixTimestampDeserializer.class)
-	private DateTime openTime;
+	private String openTime;
 	private double price;
 	private double realizedPL;
 	private State state;
 	private double unrealizedPL;
 
-	public double getStopLoss() {
-		return (price - Math.abs(unrealizedPL));
-	}
-
-	public void setStopLoss(double val) {
-		this.unrealizedPL = (-1) * (price - val);
-	}
+	private double stopLoss;
 
     @Data
     @NoArgsConstructor
@@ -58,16 +46,4 @@ public class Trade {
         List<Trade> trades = new ArrayList<>();
     }
 
-	/*private String id;
-	private int units;
-	private String side;
-	private String instrument;
-	@JsonDeserialize(using = UnixTimestampDeserializer.class)
-	private DateTime time;
-	private double price;
-	private double takeProfit;
-	private double stopLoss;
-	private double trailingStop;
-	private double trailingAmount;
-	private double profit;*/
 }

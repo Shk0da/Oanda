@@ -51,9 +51,6 @@ public class SpringDIActor implements IndirectActorProducer {
 	@Override
 	public Class<? extends Actor> actorClass() {
 		return type;
-		// ParameterizedType parameterizedType =
-		// (ParameterizedType)getClass().getGenericSuperclass();
-		// return (Class) parameterizedType.getActualTypeArguments()[0];
 	}
 
 	/**
@@ -82,6 +79,7 @@ public class SpringDIActor implements IndirectActorProducer {
 				LOG.error("Unable to create actor of type:{}", type, e);
 			}
 		}
+
 		ApplicationContextProvider.getApplicationContext().getAutowireCapableBeanFactory().autowireBean(newActor);
 		return newActor;
 	}

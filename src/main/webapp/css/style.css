@@ -747,7 +747,7 @@ body {
 }
 
 .app-footer {
-    position: absolute;
+    position: relative;
     right: 0;
     bottom: 0;
     left: 0;
@@ -780,4 +780,9 @@ body {
 .bg-warning,
 .bg-danger {
     color: #fff;
+}
+
+#account-info {
+    font-size: 18px;
+    line-height: 17px;
 }

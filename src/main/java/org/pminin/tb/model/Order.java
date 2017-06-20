@@ -3,6 +3,7 @@ package org.pminin.tb.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.pminin.tb.util.DateTimeUtil;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@ToString
 public class Order {
 
     private String id;
@@ -82,5 +84,7 @@ public class Order {
 
         return units;
     }
+
+
 
 }
