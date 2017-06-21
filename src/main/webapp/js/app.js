@@ -3,26 +3,6 @@ $(document).ready(function ($) {
     var account = {};
     var heartbeat = document.getElementById("heartbeat").getContext('2d');
 
-    $.ajax({url: "/api/account"}).done(function (data) {
-        account = data;
-        $('#accountId').html("ID: " + account.id);
-        $('#accountBalance').html(account.balance + " " + account.currency);
-        $('#ordersCount').html(account.pendingOrderCount);
-        $('#positionsCount').html(account.openPositionCount);
-        $('#tradesCount').html(account.openTradeCount);
-        $('#lastTransactionID').html(account.lastTransactionID);
-
-        var accountInfo = $("#account-info");
-        new Map(Object.entries(data)).forEach(informer);
-        function informer(value, key, map) {
-            if (value instanceof Object) {
-                accountInfo.append("<p>" + key + ": <pre>" + JSON.stringify(value, null, 4) + "</pre></p>");
-            } else {
-                accountInfo.append("<p>" + key + ": " + value + "</p>");
-            }
-        }
-    });
-
     $.ajax({url: "/api/candles"}).done(function (data) {
         var labels = [];
         var datasets = [];
@@ -61,6 +41,30 @@ $(document).ready(function ($) {
         });
     });
 
+    updateAccountInfo();
+    function updateAccountInfo() {
+        $.ajax({url: "/api/account"}).done(function (data) {
+            account = data;
+            $('#accountId').html("ID: " + account.id);
+            $('#accountBalance').html(account.balance + " " + account.currency);
+            $('#ordersCount').html(account.pendingOrderCount);
+            $('#positionsCount').html(account.openPositionCount);
+            $('#tradesCount').html(account.openTradeCount);
+            $('#lastTransactionID').html(account.lastTransactionID);
+
+            var accountInfo = $("#account-info");
+            accountInfo.html("");
+            new Map(Object.entries(data)).forEach(informer);
+            function informer(value, key, map) {
+                if (value instanceof Object) {
+                    accountInfo.append("<p>" + key + ": <pre>" + JSON.stringify(value, null, 4) + "</pre></p>");
+                } else {
+                    accountInfo.append("<p>" + key + ": " + value + "</p>");
+                }
+            }
+        });
+    }
+
     $("#resetWork").click(function () {
         $.ajax({url: "/api/reset"}).done(function (data) {
             alert(data);
@@ -73,6 +77,9 @@ $(document).ready(function ($) {
         });
     });
 
+    setInterval(function(){
+        updateAccountInfo()
+    }, 60000);
 });
 
 function timeConverter(UNIX_timestamp) {
