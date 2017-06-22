@@ -59,10 +59,10 @@ public class Sandbox {
 
     @Test
     public void profit() throws Exception {
-        TimeSeries series = new TimeSeries("eur_usd", getTicks("EUR_USD", Step.W, 365));
+        TimeSeries series = new TimeSeries("eur_usd", getTicks("EUR_USD", Step.H1, 60));
 
         // Running the strategy
-        Strategy strategy = GlobalExtremaStrategy.buildStrategy(series);
+        Strategy strategy = StrategyRules.buildStrategy(series);
         TradingRecord tradingRecord = series.run(strategy);
 
         /*Analysis*/
