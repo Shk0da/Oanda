@@ -18,7 +18,7 @@ in /src/main/resources/application.conf set
 
 **Usage**
 
-- `mvn spring-boot:run` or as you prefer
+- `mvn spring-boot:run` or  `mvn clean package` and `java -jar bot.war --server.port=8090` or as you prefer...
 
 Open your browser: localhost:8080 and enjoy =)
 

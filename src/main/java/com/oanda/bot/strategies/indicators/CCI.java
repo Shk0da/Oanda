@@ -4,8 +4,10 @@ import eu.verdelhan.ta4j.Decimal;
 import eu.verdelhan.ta4j.TimeSeries;
 import eu.verdelhan.ta4j.indicators.oscillators.CCIIndicator;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class CCI extends CCIIndicator {
 
     private Decimal highMeasuredAverageLevel;

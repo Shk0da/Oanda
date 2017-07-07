@@ -4,8 +4,10 @@ import eu.verdelhan.ta4j.Decimal;
 import eu.verdelhan.ta4j.Indicator;
 import eu.verdelhan.ta4j.indicators.trackers.RSIIndicator;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class RSI extends RSIIndicator {
     private Decimal overSoldLevel;
     private Decimal overBoughtLevel;
