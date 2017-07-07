@@ -1,23 +1,26 @@
-INSERT INTO %ORDERS%_%INSTRUMENT%  (
-	"time" ,
-	id,
-  side,
-	units,
-  price,
-  stopLoss,
-  takeProfit,
-  closed,
-	closedTime,
-  closedPrice,
-) values (
-	:dateTime ,
-	:id,
-	:side,
-	:units
-	:price,
-	:stopLoss,
-	:takeProfit,
-	FALSE,
-	NULL,
-	NULL
+INSERT INTO %ORDERS%_%INSTRUMENT% (
+"time",
+id,
+replacesOrderID,
+"type",
+units,
+price,
+stopLoss,
+takeProfit,
+closed,
+closedTime,
+closedPrice
+)
+VALUES (
+  :dateTime,
+  :id,
+  :replacesOrderID,
+  :orderType,
+  :units,
+  :price,
+  :stopLoss,
+  :takeProfit,
+  FALSE,
+  NULL,
+  NULL
 )

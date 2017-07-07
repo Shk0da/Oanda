@@ -1,5 +1,5 @@
-INSERT INTO %CANDLES%_%INSTRUMENT%_%STEP%  (
-	"time" ,	
+INSERT INTO %CANDLES%_%INSTRUMENT%_%STEP% (
+	"time",
 	openMid,
 	highMid,
 	lowMid,
@@ -7,11 +7,11 @@ INSERT INTO %CANDLES%_%INSTRUMENT%_%STEP%  (
 	volume ,
 	complete 			
 ) values (
-	:dateTime ,	
+	:dateTime,
 	:openMid,
 	:highMid,
 	:lowMid,
 	:closeMid,
 	:volume ,
 	:complete 			
-)
+) ON CONFLICT ("time") DO NOTHING;

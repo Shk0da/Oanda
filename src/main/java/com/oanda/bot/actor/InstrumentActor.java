@@ -6,7 +6,7 @@ import com.oanda.bot.actor.collector.NewsCheckActor;
 import com.oanda.bot.actor.abstracts.AbstractInstrumentActor;
 import com.oanda.bot.actor.analyzer.AnalyzerActor;
 import com.oanda.bot.actor.collector.CollectorActor;
-import com.oanda.bot.actor.strategy.StrategyActor;
+import com.oanda.bot.actor.strategy.IchimokuStrategyActor;
 import com.oanda.bot.constants.Event;
 import com.oanda.bot.dao.MainDao;
 import com.oanda.bot.model.Instrument;
@@ -42,7 +42,7 @@ public class InstrumentActor extends AbstractInstrumentActor {
     @Override
     public void preStart() throws Exception {
         candlesDao.createTables(instrument);
-        strategy = getContext().actorOf(Props.create(SpringDIActor.class, StrategyActor.class, instrument), STRATEGY);
+        strategy = getContext().actorOf(Props.create(SpringDIActor.class, IchimokuStrategyActor.class, instrument), STRATEGY);
         collector = getContext().actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument), COLLECTOR);
         analyzer = getContext().actorOf(Props.create(SpringDIActor.class, AnalyzerActor.class, instrument), ANALYZER);
         getContext().actorOf(Props.create(SpringDIActor.class, NewsCheckActor.class, instrument), NEWSCHECK);

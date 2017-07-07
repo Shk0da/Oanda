@@ -27,6 +27,8 @@ public class Candle {
     @JsonDeserialize(using = StringDateTimeDeserializer.class)
     private DateTime time;
     private Mid mid = new Mid();
+    private Bid bid = new Bid();
+    private Ask ask = new Ask();
     private int volume;
     private boolean complete;
     private boolean broken;
@@ -131,4 +133,25 @@ public class Candle {
         private double c;
     }
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Ask {
+        private double o;
+        private double h;
+        private double l;
+        private double c;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Bid {
+        private double o;
+        private double h;
+        private double l;
+        private double c;
+    }
 }

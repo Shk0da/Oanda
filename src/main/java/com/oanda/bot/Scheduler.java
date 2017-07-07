@@ -30,7 +30,6 @@ public class Scheduler implements Constants {
 	@Autowired 
 	private TaskScheduler taskScheduler;
 
-
 	@Autowired
 	public Scheduler(ActorSystem actorSystem) {
 		this.actorSystem = actorSystem;

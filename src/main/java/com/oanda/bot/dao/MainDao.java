@@ -1,11 +1,12 @@
 package com.oanda.bot.dao;
 
 import com.oanda.bot.model.*;
+import com.oanda.bot.service.AccountService;
+import jersey.repackaged.com.google.common.collect.Lists;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import com.oanda.bot.StrategySteps;
 import com.oanda.bot.constants.Step;
-import com.oanda.bot.model.*;
 import com.oanda.bot.model.Candle.Candles;
 import com.oanda.bot.util.ModelUtil;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import java.io.LineNumberReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Repository("mainDao")
@@ -36,6 +38,8 @@ public class MainDao {
 	private static final String PH_INSTRUMENT = "%INSTRUMENT%";
 	private static final String PH_STEP = "%STEP%";
 	private static final String PH_CANDLES = "%CANDLES%";
+	private static final String FROM_TIME = "%FROMTIME%";
+	private static final String TO_TIME = "%TOTIME%";
 	private static final String PH_PIVOT = "%PIVOT%";
 	private static final String PH_ORDERS = "%ORDERS%";
 	private static final String PH_FRACTALS = "%FRACTALS%";
@@ -50,11 +54,14 @@ public class MainDao {
     Logger logger;
     @Autowired
     private StrategySteps steps;
+	@Autowired
+	private AccountService accountService;
 	private JdbcTemplate jdbcTemplate;
 	private NamedParameterJdbcTemplate npJdbcTemplate;
 	private String createCandlesTableScript;
 	private String insertCandleScript;
 	private String getLastCandleScript;
+	private String getWhereTimeCandleScript;
 	private String createPivotTableScript;
 	private String getLastPivotScript;
 	private String insertPivotScript;
@@ -176,6 +183,50 @@ public class MainDao {
 		}
 	}
 
+	public List<Candle> getWhereTimeCandle(Step step, Instrument instrument, Date from, Date to) throws Exception {
+		List<Candle> candles = Lists.newArrayList();
+		createCandlesTable(step, instrument);
+		String script = getWhereTimeCandleScript
+				.replaceAll(PH_STEP, step.toString())
+				.replaceAll(PH_INSTRUMENT, instrument.toString())
+				.replaceAll(PH_CANDLES, CANDLES_PREFIX)
+				.replaceAll(FROM_TIME, String.valueOf(from.getTime()))
+				.replaceAll(TO_TIME, String.valueOf(to.getTime()));
+
+		try {
+			List<Map<String, Object>> result = jdbcTemplate.queryForList(script);
+			for (Map<String, Object> row : result) {
+				Candle candle = new Candle();
+				candle.setTime(new DateTime(row.get("time"), DateTimeZone.getDefault()));
+				candle.setOpenMid((double)row.get("openmid"));
+				candle.setHighMid((double)row.get("highmid"));
+				candle.setLowMid((double)row.get("lowmid"));
+				candle.setCloseMid((double)row.get("closemid"));
+				candle.setVolume((int)row.get("volume"));
+				candle.setComplete((boolean)row.get("complete"));
+				candles.add(candle);
+			}
+		} catch (EmptyResultDataAccessException e) {
+			candles =  null;
+		}
+
+		if (candles == null || candles.isEmpty()) {
+			candles = updateHistoryCandles(step, instrument, 365);
+		}
+
+		return candles;
+	}
+
+	public List<Candle> updateHistoryCandles(Step step, Instrument instrument, int diff) throws Exception{
+		Candle.Candles candles = accountService.getCandles(
+				step,
+				DateTime.now(DateTimeZone.getDefault()).minusDays(diff),
+				instrument);
+
+		insertCandles(candles);
+		return candles.getCandles();
+	}
+
 	public Candle getLastFractal(Step step, Instrument instrument) {
 		String script = getLastFractalScript2.replaceAll(PH_STEP, step.toString())
 				.replaceAll(PH_INSTRUMENT, instrument.toString()).replaceAll(PH_CANDLES, CANDLES_PREFIX)
@@ -250,6 +301,9 @@ public class MainDao {
 		in = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("/sql/candles_getlast.sql")));
 		fileReader = new LineNumberReader(in);
 		getLastCandleScript = ScriptUtils.readScript(fileReader, "--", ";");
+		in = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("/sql/candles_getwheretime.sql")));
+		fileReader = new LineNumberReader(in);
+		getWhereTimeCandleScript = ScriptUtils.readScript(fileReader, "--", ";");
 		in = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("/sql/pivot_create.sql")));
 		fileReader = new LineNumberReader(in);
 		createPivotTableScript = ScriptUtils.readScript(fileReader, "--", ";");
@@ -320,10 +374,10 @@ public class MainDao {
 		return null;
 	}
 
-	public int insertOrder(PostOrderResponse order, Instrument instrument) {
+	public int insertOrder(Order order, Instrument instrument) {
 		String script = insertOrderScript.replaceAll(PH_INSTRUMENT, instrument.toString()).replaceAll(PH_ORDERS,
 				ORDERS_PREFIX);
-		SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(new PostOrderResponse[] { order });
+		SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(new Order[] { order });
 		int[] counts = npJdbcTemplate.batchUpdate(script, batch);
 		return Arrays.stream(counts).sum();
 	}

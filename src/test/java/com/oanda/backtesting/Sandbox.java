@@ -1,15 +1,15 @@
 package com.oanda.backtesting;
 
-import com.oanda.backtesting.strategies.*;
+import com.oanda.bot.strategies.*;
 import com.oanda.bot.TradingBotApplication;
 import com.oanda.bot.constants.Step;
-import com.oanda.bot.dao.MainDao;
 import com.oanda.bot.model.Candle;
 import com.oanda.bot.model.Instrument;
 import com.oanda.bot.service.AccountService;
 import eu.verdelhan.ta4j.*;
 import eu.verdelhan.ta4j.analysis.criteria.*;
 import jersey.repackaged.com.google.common.collect.Lists;
+import jersey.repackaged.com.google.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Period;
@@ -21,10 +21,7 @@ import org.springframework.boot.test.SpringApplicationContextLoader;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TradingBotApplication.class, loader = SpringApplicationContextLoader.class)
@@ -59,10 +56,10 @@ public class Sandbox {
 
     @Test
     public void profit() throws Exception {
-        TimeSeries series = new TimeSeries("eur_usd", getTicks("EUR_USD", Step.H1, 60));
+        TimeSeries series = new TimeSeries("EUR_USD", getTicks("EUR_USD", Step.M10, 10));
 
         // Running the strategy
-        Strategy strategy = StrategyRules.buildStrategy(series);
+        Strategy strategy = IchimokuMacdEma.buildStrategy(series);
         TradingRecord tradingRecord = series.run(strategy);
 
         /*Analysis*/
@@ -92,6 +89,75 @@ public class Sandbox {
         // Total profit vs buy-and-hold
         System.out.println("Custom strategy profit vs buy-and-hold strategy profit: " + new VersusBuyAndHoldCriterion(totalProfit).calculate(series, tradingRecord));
         System.out.println(ANSI_RESET);
+    }
+
+    @Test
+    public void walkTest() throws Exception {
+        TimeSeries series = new TimeSeries("eur_usd", getTicks("EUR_USD", Step.M10, 5));
+        Map<String, Double> results = Maps.newHashMap();
+
+        /*
+        * SolyankaStrategy
+        *
+        * H1: 48;38;3;43;38;37;6 1.0037866641130748
+        *     48;38;3;48;2;37;6 1.003498480743955
+        *     48;38;3;48;2;10;1 1.003498480743955
+        *     10;16;3;48;2;10;1 1.0058799583204894
+        *     10;16;6;24;33;10;1 1.0064696941079778
+        *     10;16;6;24;33;5;1 1.0068122253829486
+        *     9;23;6;24;33;5;1 1.007868495505981
+        *     9;23;7;26;49;5;1 1.0079408608619682
+        *     9;23;6;24;33;4;1 1.007868495505981
+        *     5;14;6;24;33;5;1 1.0082664763887241 *best
+        *     5;14;13;38;18;5;1 1.0082664763887241
+        *     5;14;13;38;18;5;1 1.0082664763887241
+        *
+        * M10:6;6;6;24;33;5;1 1.0067615969238015
+        *     6;6;6;48;24;5;1 1.0081935587770867
+        *     6;6;6;48;24;5;1 1.0077064215304206
+        *     2;3;6;48;24;5;1 1.0086920676377533
+        *     2;3;6;48;46;5;1 1.0087898927433605
+        *     2;3;6;48;46;8;1 1.0094104390240544
+        *     5;6;6;48;46;8;1 1.009732643276619
+        *     5;6;3;42;24;8;1 1.0101219227846172
+        *     5;6;3;42;24;8;1 1.0097128162665794
+        *     9;11;3;42;24;8;1 1.0107234252654913
+        *     9;11;3;32;33;8;1 1.0114441883652268
+        *
+        * M1:
+        * */
+
+        int i1 = 9;
+        int i2 = 11;
+        int i3 = 3;
+        int i4 = 32;
+        int i5 = 33;
+        int i6 = 8;
+        int i7 = 1;
+
+        for (i6 = 1; i6 < 50; i6++)
+            for (i7 = 1; i7 < 50; i7++) /*for (i5 = 1; i5 < 50; i5++)*/ {
+
+                Map<String, Integer> params = Maps.newHashMap();
+                params.put("shortPeriodMA", i1);
+                params.put("longPeriodMA", i2);
+                params.put("RSIPeriods", i3);
+                params.put("RSILowerValue", i4);
+                params.put("RSIUpperValue", i5);
+                params.put("bollingerBandsPeriod", i6);
+                params.put("bollingerBandsFactor", i7);
+
+                Strategy strategy = SolyankaStrategy.buildStrategy(series, params);
+                TradingRecord tradingRecord = series.run(strategy);
+                TotalProfitCriterion totalProfit = new TotalProfitCriterion();
+                double profit = totalProfit.calculate(series, tradingRecord);
+                results.put(String.format("%d;%d;%d;%d;%d;%d;%d", i1, i2, i3, i4, i5, i6, i7), profit);
+            }
+
+        String betterParams = results.entrySet().stream()
+                .max((entry1, entry2) -> entry1.getValue() > entry2.getValue() ? 1 : -1).get().getKey();
+
+        System.out.println(ANSI_GREEN + betterParams + " " + results.get(betterParams) + ANSI_RESET);
     }
 
     @Test
@@ -131,15 +197,14 @@ public class Sandbox {
 
     @Test
     public void walkForward() throws Exception {
-        TimeSeries series = new TimeSeries("eur_usd", getTicks("EUR_USD", Step.M15, 90));
+        TimeSeries series = new TimeSeries("USD_CHF", getTicks("USD_CHF", Step.M1, 5));
         List<TimeSeries> subseries = series.split(Period.days(6), Period.days(7));
 
         // Building the map of strategies
         HashMap<Strategy, String> strategies = new HashMap<>();
-        strategies.put(CCICorrectionStrategy.buildStrategy(series), "CCI Correction");
-        strategies.put(GlobalExtremaStrategy.buildStrategy(series), "Global Extrema");
-        strategies.put(MovingMomentumStrategy.buildStrategy(series), "Moving Momentum");
-        strategies.put(RSI2Strategy.buildStrategy(series), "RSI-2");
+        strategies.put(IchimokuMacdEma.buildStrategy(series), "IchimokuMacdEma");
+        strategies.put(IchimokuMacdEmaSecond.buildStrategy(series), "IchimokuMacdEmaSecond");
+        strategies.put(IchimokuCloudTradingStrategy.buildStrategy(series), "IchimokuCloudTradingStrategy");
 
         // The analysis criterion
         AnalysisCriterion profitCriterion = new TotalProfitCriterion();

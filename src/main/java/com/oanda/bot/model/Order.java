@@ -5,8 +5,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import com.oanda.bot.util.DateTimeUtil;
+import org.joda.time.DateTime;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @AllArgsConstructor
@@ -36,7 +38,8 @@ public class Order {
     }
 
     public enum OrderType {
-        MARKET, LIMIT, STOP, MARKET_IF_TOUCHED, TAKE_PROFIT, STOP_LOSS, TRAILING_STOP_LOSS, MARKET_ORDER, STOP_ORDER, LIMIT_ORDER
+        MARKET, LIMIT, STOP, MARKET_IF_TOUCHED, TAKE_PROFIT, STOP_LOSS, TRAILING_STOP_LOSS,
+        MARKET_ORDER, LIMIT_ORDER, STOP_ORDER, MARKET_IF_TOUCHED_ORDER, TAKE_PROFIT_ORDER, STOP_LOSS_ORDER, TRAILING_STOP_LOSS_ORDER
     }
 
     public enum TimeInForce {
@@ -74,17 +77,24 @@ public class Order {
         if (type.equals(OrderType.LIMIT_ORDER)) type = OrderType.LIMIT;
         if (type.equals(OrderType.STOP_ORDER)) type = OrderType.STOP;
         if (type.equals(OrderType.MARKET_ORDER)) type = OrderType.MARKET;
+        if (type.equals(OrderType.MARKET_IF_TOUCHED_ORDER)) type = OrderType.MARKET_IF_TOUCHED;
 
         this.type = type;
     }
 
-    public double getUnits() {
-        if (type.equals(OrderType.STOP)) units = Math.abs(units) * (-1);
-        if (type.equals(OrderType.LIMIT)) units = Math.abs(units);
-
-        return units;
+    public double getStopLoss() {
+        return this.getStopLossOnFill().getPrice();
     }
 
+    public double getTakeProfit() {
+        return this.getTakeProfitOnFill().getPrice();
+    }
 
+    public String getOrderType() {
+        return this.getType().name();
+    }
 
+    public Date getDateTime() {
+        return DateTime.now().toDate();
+    }
 }

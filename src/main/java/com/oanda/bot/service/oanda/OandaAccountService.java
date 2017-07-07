@@ -7,7 +7,6 @@ import jersey.repackaged.com.google.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import com.oanda.bot.constants.Step;
-import com.oanda.bot.*;
 import com.oanda.bot.model.Candle.Candles;
 import com.oanda.bot.model.Instrument.Instruments;
 import com.oanda.bot.model.Price.Prices;
@@ -35,8 +34,8 @@ public class OandaAccountService implements AccountService {
     private static final String CALENDAR_API = "labs/v1/calendar?instrument=%s&period=-%d";
     private static final String INSTRUMENTS_API = "v3/accounts/%s/instruments?instruments=%s_%s";
     private static final String INSTRUMENTS_API_1 = "v3/accounts/%s/instruments?instruments=%s";
-    private static final String CANDLES_API = "v3/instruments/%s/candles?price=M&granularity=%s&from=%s&to=%s&includeFirst=%b";
-    private static final String CANDLES_API_COUNT = "v3/instruments/%s/candles?price=M&granularity=%s&count=%d";
+    private static final String CANDLES_API = "v3/instruments/%s/candles?price=MAB&granularity=%s&from=%s&to=%s&includeFirst=%b";
+    private static final String CANDLES_API_COUNT = "v3/instruments/%s/candles?price=MAB&granularity=%s&count=%d";
 
     @Autowired
     Logger logger;
@@ -94,8 +93,7 @@ public class OandaAccountService implements AccountService {
 
     @Override
     public Instrument getInstrument(String pair) {
-        Optional<Instruments> response = getResponse(instrumentsUrl(pair), HttpMethod.GET, headers(),
-                Instruments.class);
+        Optional<Instruments> response = getResponse(instrumentsUrl(pair), HttpMethod.GET, headers(), Instruments.class);
         if (response.isPresent()) {
             List<Instrument> instruments = response.get().getInstruments();
             return instruments.stream().findFirst().orElse(null);
@@ -106,8 +104,7 @@ public class OandaAccountService implements AccountService {
 
     @Override
     public Instrument getInstrument(String left, String right) {
-        Optional<Instruments> response = getResponse(instrumentsUrl(left, right), HttpMethod.GET, headers(),
-                Instruments.class);
+        Optional<Instruments> response = getResponse(instrumentsUrl(left, right), HttpMethod.GET, headers(), Instruments.class);
         if (response.isPresent()) {
             List<Instrument> instruments = response.get().getInstruments();
             return instruments.stream().findFirst().orElse(null);
@@ -287,7 +284,7 @@ public class OandaAccountService implements AccountService {
 
         Trades trades = getTrades(instrument);
         trades.getTrades().stream().forEach(trade ->
-                getResponse(updateTradeUrl(trade) + "/close", HttpMethod.PUT, entity, Trade.class));
+                getResponse(tradesUrl() + "/" + trade.getId() + "/close", HttpMethod.PUT, entity, Trade.class));
     }
 
     private String updateOrderUrl(Order order) {
@@ -344,13 +341,6 @@ public class OandaAccountService implements AccountService {
         orderData.put("stopLossOnFill", stopLossOnFill);
 
         Map<String, Object> map = Maps.newHashMap();
-
-        map.forEach((k, v) -> {
-            if (v == null || v.toString().isEmpty()) {
-                logger.debug(order.toString());
-            }
-        });
-
         map.put("order", orderData);
 
         return map;
