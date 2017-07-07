@@ -85,6 +85,11 @@ public class OandaAccountService implements AccountService {
         return getCandles(step, start, end, instrument, false);
     }
 
+    @Override
+    public Candles getCandles(Step step, DateTime start, DateTime end, Instrument instrument) {
+        return getCandles(step, start, end, instrument, false);
+    }
+
     private Candles getCandles(Step step, int count, Instrument instrument) {
         String candlesUrl = candlesUrl(step, count, instrument);
         Optional<Candles> response = getResponse(candlesUrl, HttpMethod.GET, headers(), Candles.class);

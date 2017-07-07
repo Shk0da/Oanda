@@ -24,6 +24,8 @@ public interface AccountService {
 
 	Candles getCandles(Step step, DateTime start, Instrument instrument);
 
+	Candles getCandles(Step step, DateTime start, DateTime end, Instrument instrument);
+
 	Instrument getInstrument(String pair);
 
 	Instrument getInstrument(String left, String right);

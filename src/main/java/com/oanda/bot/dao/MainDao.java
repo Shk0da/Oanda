@@ -211,16 +211,17 @@ public class MainDao {
 		}
 
 		if (candles == null || candles.isEmpty()) {
-			candles = updateHistoryCandles(step, instrument, 365);
+			candles = updateHistoryCandles(step, instrument, new DateTime(from), new DateTime(to));
 		}
 
 		return candles;
 	}
 
-	public List<Candle> updateHistoryCandles(Step step, Instrument instrument, int diff) throws Exception{
+	public List<Candle> updateHistoryCandles(Step step, Instrument instrument, DateTime from, DateTime to) throws Exception{
 		Candle.Candles candles = accountService.getCandles(
 				step,
-				DateTime.now(DateTimeZone.getDefault()).minusDays(diff),
+				from,
+				to,
 				instrument);
 
 		insertCandles(candles);

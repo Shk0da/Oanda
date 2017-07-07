@@ -24,9 +24,8 @@ import java.util.List;
 @Scope("prototype")
 public class IchimokuStrategyActor extends AbstractInstrumentActor {
 
-    private final static int DAYS_BACK = 30;
+    private final static int DAYS_BACK = 365;
     private final static int PIPS = 3;
-    private final static int CONFIRM = 1;
 
     @Autowired
     private AccountService accountService;
@@ -42,7 +41,6 @@ public class IchimokuStrategyActor extends AbstractInstrumentActor {
     private TradingRecord tradingRecord;
     private Candle currentRate;
     private Order order = new Order();
-    private int confirmDirection = 0;
 
     public IchimokuStrategyActor(Instrument instrument) {
         super(instrument);
@@ -89,23 +87,13 @@ public class IchimokuStrategyActor extends AbstractInstrumentActor {
 
         if (strategy.shouldEnter(endIndex)) {
             if (tradingRecord.enter(endIndex)) {
-                confirmDirection++;
-                log.info(String.format("Confirm direction %s: %d", instrument.getDisplayName(), confirmDirection));
-                if (confirmDirection >= CONFIRM) {
-                    currentRate.setDirection(DIRECTION_UP);
-                    initOrder();
-                    confirmDirection = 0;
-                }
+                currentRate.setDirection(DIRECTION_UP);
+                initOrder();
             }
         } else if (strategy.shouldExit(endIndex)) {
             if (tradingRecord.exit(endIndex)) {
-                confirmDirection--;
-                log.info(String.format("Confirm direction %s: %d", instrument.getDisplayName(), confirmDirection));
-                if (confirmDirection <= -CONFIRM) {
-                    currentRate.setDirection(DIRECTION_DOWN);
-                    initOrder();
-                    confirmDirection = 0;
-                }
+                currentRate.setDirection(DIRECTION_DOWN);
+                initOrder();
             }
         }
     }
@@ -119,12 +107,12 @@ public class IchimokuStrategyActor extends AbstractInstrumentActor {
         //GFD	The Order is “Good For Day” and will be cancelled at 5pm New York time
         //FOK	The Order must be immediately “Filled Or Killed”
         //IOC	The Order must be “Immediatedly paritally filled Or Cancelled”
-        order.setTimeInForce(Order.TimeInForce.FOK);
+        order.setTimeInForce(Order.TimeInForce.GTD);
         order.setCancelledTime(DateTimeUtil.rfc3339(DateTime.now(DateTimeZone.getDefault()).plusDays(7)));
         order.setGtdTime(DateTimeUtil.rfc3339(DateTime.now(DateTimeZone.getDefault()).plusDays(7)));
         order.setInstrument(instrument.toString());
         order.setPositionFill(Order.OrderPositionFill.DEFAULT);
-        order.setType(Order.OrderType.MARKET);
+        order.setType(Order.OrderType.LIMIT);
         log.info("Order side is set to " + order.getType());
         double balance = accountService.getAccountDetails().getBalance();
         int units = (int) (balance / 100 * 1000);
@@ -208,7 +196,17 @@ public class IchimokuStrategyActor extends AbstractInstrumentActor {
     }
 
     private List<Tick> getTicks(Instrument instrument, Step step, int daysBack) throws Exception {
-        List<Candle> candles = mainDao.updateHistoryCandles(step, instrument, daysBack);
+        List<Candle> candles = Lists.newArrayList();
+
+        for (int d = 0; d <= daysBack; d = d + 30) {
+            candles.addAll(mainDao.getWhereTimeCandle(
+                    step,
+                    instrument,
+                    DateTime.now(DateTimeZone.getDefault()).minusDays(d + 10).toDate(),
+                    DateTime.now(DateTimeZone.getDefault()).minusDays(d).toDate()
+            ));
+        }
+
         List<Tick> ticks = Lists.newArrayList();
         candles.forEach(candle ->
                 ticks.add(new Tick(

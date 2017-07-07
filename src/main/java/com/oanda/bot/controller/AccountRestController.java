@@ -64,14 +64,24 @@ public class AccountRestController {
             );
 
             if (candles == null || candles.isEmpty() || (candles.size() < (daysBack * .90))) {
-                candles = mainDao.updateHistoryCandles(step, storage.getInstrument(instrument), daysBack);
+                candles = mainDao.updateHistoryCandles(
+                        step,
+                        storage.getInstrument(instrument),
+                        new DateTime().minusDays(daysBack),
+                        DateTime.now()
+                );
             }
 
             Date lastCandleDate = candles.get(candles.size() - 1).getDateTime();
-            long dayDiff = TimeUnit.DAYS.convert((new Date().getTime()) - lastCandleDate.getTime(), TimeUnit.MILLISECONDS);
+            int dayDiff = (int)TimeUnit.DAYS.convert((new Date().getTime()) - lastCandleDate.getTime(), TimeUnit.MILLISECONDS);
 
             if (dayDiff >= 1) {
-                candles.addAll(mainDao.updateHistoryCandles(step, storage.getInstrument(instrument), (int)dayDiff));
+                candles.addAll(mainDao.updateHistoryCandles(
+                        step,
+                        storage.getInstrument(instrument),
+                        new DateTime().minusDays(dayDiff),
+                        DateTime.now()
+                ));
             }
 
             prices.put(instrument, candles);
