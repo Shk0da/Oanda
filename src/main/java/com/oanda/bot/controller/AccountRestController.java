@@ -8,6 +8,7 @@ import com.oanda.bot.model.Candle;
 import com.oanda.bot.service.AccountService;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import jersey.repackaged.com.google.common.collect.Lists;
 import jersey.repackaged.com.google.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -56,31 +57,14 @@ public class AccountRestController {
             String right = cfg.getString("right");
             String instrument = left + "_" + right;
 
-            List<Candle> candles = mainDao.getWhereTimeCandle(
-                    step,
-                    storage.getInstrument(instrument),
-                    DateTime.now(DateTimeZone.getDefault()).minusDays(daysBack).toDate(),
-                    DateTime.now().toDate()
-            );
-
-            if (candles == null || candles.isEmpty() || (candles.size() < (daysBack * .90))) {
-                candles = mainDao.updateHistoryCandles(
+            List<Candle> candles = Lists.newArrayList();
+            int ichiIndex = 26;
+            for (int d = daysBack; d > 0; d = d - ichiIndex) {
+                candles.addAll(mainDao.getWhereTimeCandle(
                         step,
                         storage.getInstrument(instrument),
-                        new DateTime().minusDays(daysBack),
-                        DateTime.now()
-                );
-            }
-
-            Date lastCandleDate = candles.get(candles.size() - 1).getDateTime();
-            int dayDiff = (int)TimeUnit.DAYS.convert((new Date().getTime()) - lastCandleDate.getTime(), TimeUnit.MILLISECONDS);
-
-            if (dayDiff >= 1) {
-                candles.addAll(mainDao.updateHistoryCandles(
-                        step,
-                        storage.getInstrument(instrument),
-                        new DateTime().minusDays(dayDiff),
-                        DateTime.now()
+                        DateTime.now(DateTimeZone.getDefault()).minusDays(d).toDate(),
+                        DateTime.now(DateTimeZone.getDefault()).minusDays(d - ichiIndex).toDate()
                 ));
             }
 
