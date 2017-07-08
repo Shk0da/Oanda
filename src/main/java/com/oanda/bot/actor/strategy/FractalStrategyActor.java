@@ -1,8 +1,5 @@
 package com.oanda.bot.actor.strategy;
 
-import com.oanda.bot.model.*;
-import com.oanda.bot.service.AccountService;
-import org.joda.time.DateTime;
 import com.oanda.bot.StrategySteps;
 import com.oanda.bot.actor.abstracts.AbstractInstrumentActor;
 import com.oanda.bot.constants.Event;
@@ -11,6 +8,9 @@ import com.oanda.bot.constants.Event.FractalBroken;
 import com.oanda.bot.constants.Event.FractalConfirmed;
 import com.oanda.bot.constants.Event.TradeOpened;
 import com.oanda.bot.dao.MainDao;
+import com.oanda.bot.model.*;
+import com.oanda.bot.service.AccountService;
+import org.joda.time.DateTime;
 import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;

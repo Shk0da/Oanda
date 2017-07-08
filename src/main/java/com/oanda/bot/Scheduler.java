@@ -1,11 +1,11 @@
 package com.oanda.bot;
 
 import akka.actor.ActorSystem;
+import com.oanda.bot.constants.Constants;
+import com.oanda.bot.constants.Event;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.joda.time.DateTime;
-import com.oanda.bot.constants.Constants;
-import com.oanda.bot.constants.Event;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

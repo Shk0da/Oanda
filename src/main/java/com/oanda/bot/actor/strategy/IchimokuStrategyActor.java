@@ -5,12 +5,17 @@ import com.oanda.bot.actor.abstracts.AbstractInstrumentActor;
 import com.oanda.bot.constants.Event;
 import com.oanda.bot.constants.Step;
 import com.oanda.bot.dao.MainDao;
-import com.oanda.bot.model.*;
+import com.oanda.bot.model.Candle;
+import com.oanda.bot.model.Instrument;
 import com.oanda.bot.model.Order;
+import com.oanda.bot.model.Price;
 import com.oanda.bot.service.AccountService;
 import com.oanda.bot.strategies.IchimokuCloudTradingStrategy;
 import com.oanda.bot.util.DateTimeUtil;
-import eu.verdelhan.ta4j.*;
+import eu.verdelhan.ta4j.Strategy;
+import eu.verdelhan.ta4j.Tick;
+import eu.verdelhan.ta4j.TimeSeries;
+import eu.verdelhan.ta4j.TradingRecord;
 import jersey.repackaged.com.google.common.collect.Lists;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -198,12 +203,13 @@ public class IchimokuStrategyActor extends AbstractInstrumentActor {
     private List<Tick> getTicks(Instrument instrument, Step step, int daysBack) throws Exception {
         List<Candle> candles = Lists.newArrayList();
 
-        for (int d = 0; d <= daysBack; d = d + 30) {
+        int ichiIndex = 26;
+        for (int d = daysBack; d > 0; d = d - ichiIndex) {
             candles.addAll(mainDao.getWhereTimeCandle(
                     step,
                     instrument,
-                    DateTime.now(DateTimeZone.getDefault()).minusDays(d + 10).toDate(),
-                    DateTime.now(DateTimeZone.getDefault()).minusDays(d).toDate()
+                    DateTime.now(DateTimeZone.getDefault()).minusDays(d).toDate(),
+                    DateTime.now(DateTimeZone.getDefault()).minusDays(d - ichiIndex).toDate()
             ));
         }
 

@@ -1,10 +1,10 @@
 package com.oanda.bot.controller;
 
+import com.oanda.bot.Scheduler;
 import com.oanda.bot.model.Order;
 import com.oanda.bot.service.AccountService;
-import jersey.repackaged.com.google.common.collect.Lists;
-import com.oanda.bot.Scheduler;
 import com.oanda.bot.util.DateTimeUtil;
+import jersey.repackaged.com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -2,12 +2,12 @@ package com.oanda.bot;
 
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import com.oanda.bot.actor.InstrumentActor;
 import com.oanda.bot.actor.SpringDIActor;
 import com.oanda.bot.model.Instrument;
 import com.oanda.bot.service.AccountService;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

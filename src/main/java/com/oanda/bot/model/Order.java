@@ -1,10 +1,10 @@
 package com.oanda.bot.model;
 
+import com.oanda.bot.util.DateTimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import com.oanda.bot.util.DateTimeUtil;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;

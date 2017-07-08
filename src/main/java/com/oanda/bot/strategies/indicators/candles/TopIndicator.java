@@ -1,12 +1,12 @@
 package com.oanda.bot.strategies.indicators.candles;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 import eu.verdelhan.ta4j.Decimal;
 import eu.verdelhan.ta4j.Tick;
 import eu.verdelhan.ta4j.TimeSeries;
 import eu.verdelhan.ta4j.indicators.CachedIndicator;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 public class TopIndicator extends CachedIndicator<Boolean>{
 	private final int timeFrame;

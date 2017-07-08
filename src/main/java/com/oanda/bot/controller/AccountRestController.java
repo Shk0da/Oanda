@@ -1,16 +1,16 @@
 package com.oanda.bot.controller;
 
 import com.oanda.bot.InstrumentStorage;
+import com.oanda.bot.constants.Step;
 import com.oanda.bot.dao.MainDao;
 import com.oanda.bot.model.Accounts;
+import com.oanda.bot.model.Candle;
 import com.oanda.bot.service.AccountService;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import jersey.repackaged.com.google.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import com.oanda.bot.constants.Step;
-import com.oanda.bot.model.Candle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

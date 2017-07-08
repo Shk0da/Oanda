@@ -2,12 +2,12 @@ package com.oanda.bot.actor.analyzer;
 
 import com.oanda.bot.actor.abstracts.StepActor;
 import com.oanda.bot.constants.Constants;
-import com.oanda.bot.model.Candle;
-import com.oanda.bot.model.Pivot;
-import com.oanda.bot.service.AccountService;
 import com.oanda.bot.constants.Event;
 import com.oanda.bot.constants.Step;
+import com.oanda.bot.model.Candle;
 import com.oanda.bot.model.Instrument;
+import com.oanda.bot.model.Pivot;
+import com.oanda.bot.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;

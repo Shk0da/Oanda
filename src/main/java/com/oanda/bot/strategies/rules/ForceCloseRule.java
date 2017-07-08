@@ -1,11 +1,11 @@
 package com.oanda.bot.strategies.rules;
 
-import java.time.LocalTime;
-
 import eu.verdelhan.ta4j.Tick;
 import eu.verdelhan.ta4j.TimeSeries;
 import eu.verdelhan.ta4j.TradingRecord;
 import eu.verdelhan.ta4j.trading.rules.AbstractRule;
+
+import java.time.LocalTime;
 
 public class ForceCloseRule extends AbstractRule {
 

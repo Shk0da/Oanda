@@ -1,10 +1,9 @@
 package com.oanda.bot.model;
 
-import org.joda.time.DateTime;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.joda.time.DateTime;
 
 @Data
 @AllArgsConstructor

@@ -2,10 +2,10 @@ package com.oanda.bot.actor;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import com.oanda.bot.actor.collector.NewsCheckActor;
 import com.oanda.bot.actor.abstracts.AbstractInstrumentActor;
 import com.oanda.bot.actor.analyzer.AnalyzerActor;
 import com.oanda.bot.actor.collector.CollectorActor;
+import com.oanda.bot.actor.collector.NewsCheckActor;
 import com.oanda.bot.actor.strategy.IchimokuStrategyActor;
 import com.oanda.bot.constants.Event;
 import com.oanda.bot.dao.MainDao;

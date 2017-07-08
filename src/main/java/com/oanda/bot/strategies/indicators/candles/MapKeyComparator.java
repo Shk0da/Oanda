@@ -1,8 +1,8 @@
 package com.oanda.bot.strategies.indicators.candles;
 
-import java.util.Comparator;
-
 import eu.verdelhan.ta4j.Decimal;
+
+import java.util.Comparator;
 
 public class MapKeyComparator implements Comparator<Decimal>{
 

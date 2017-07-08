@@ -1,7 +1,5 @@
 package com.oanda.bot.actor.collector;
 
-import java.util.List;
-
 import com.oanda.bot.actor.abstracts.AbstractInstrumentActor;
 import com.oanda.bot.constants.Constants;
 import com.oanda.bot.constants.Event;
@@ -12,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component("NewsCheckActor")
 @Scope("prototype")

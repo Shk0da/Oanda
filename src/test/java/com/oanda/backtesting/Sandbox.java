@@ -1,11 +1,11 @@
 package com.oanda.backtesting;
 
-import com.oanda.bot.strategies.*;
+import com.oanda.bot.InstrumentStorage;
 import com.oanda.bot.TradingBotApplication;
 import com.oanda.bot.constants.Step;
+import com.oanda.bot.dao.MainDao;
 import com.oanda.bot.model.Candle;
-import com.oanda.bot.model.Instrument;
-import com.oanda.bot.service.AccountService;
+import com.oanda.bot.strategies.*;
 import eu.verdelhan.ta4j.*;
 import eu.verdelhan.ta4j.analysis.criteria.*;
 import jersey.repackaged.com.google.common.collect.Lists;
@@ -21,7 +21,10 @@ import org.springframework.boot.test.SpringApplicationContextLoader;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TradingBotApplication.class, loader = SpringApplicationContextLoader.class)
@@ -47,7 +50,10 @@ public class Sandbox {
     public static final String ANSI_WHITE_BACKGROUND = "\u001B[47m";
 
     @Autowired
-    private AccountService accountService;
+    private MainDao mainDao;
+
+    @Autowired
+    private InstrumentStorage storage;
 
     @Before
     public void init() {
@@ -56,18 +62,16 @@ public class Sandbox {
 
     @Test
     public void profit() throws Exception {
-        TimeSeries series = new TimeSeries("EUR_USD", getTicks("EUR_USD", Step.M10, 10));
+        TimeSeries series = new TimeSeries("EUR_USD", getTicks("EUR_USD", Step.H1, 365));
 
         // Running the strategy
-        Strategy strategy = IchimokuMacdEma.buildStrategy(series);
+        Strategy strategy = IchimokuCloudTradingStrategy.buildStrategy(series);
         TradingRecord tradingRecord = series.run(strategy);
 
         /*Analysis*/
         TotalProfitCriterion totalProfit = new TotalProfitCriterion();
         double profit = totalProfit.calculate(series, tradingRecord);
         System.out.println(ANSI_GREEN);
-        //Result
-        System.out.println("Your 1000$ would turn into: " + String.format("%.2f", 1000 * profit) + "$!");
         // Total profit
         System.out.println("Total profit: " + profit);
         // Number of ticks
@@ -228,15 +232,21 @@ public class Sandbox {
         }
     }
 
-    private List<Tick> getTicks(String pair, Step step, int daysBack) throws Exception {
-        Instrument instrument = accountService.getInstrument(pair);
-        Candle.Candles candles = accountService.getCandles(
-                step,
-                DateTime.now(DateTimeZone.getDefault()).minusDays(daysBack),
-                instrument);
+    private List<Tick> getTicks(String instrument, Step step, int daysBack) throws Exception {
+        List<Candle> candles = Lists.newArrayList();
+
+        int ichiIndex = 26;
+        for (int d = daysBack; d > 0; d = d - ichiIndex) {
+            candles.addAll(mainDao.getWhereTimeCandle(
+                    step,
+                    storage.getInstrument(instrument),
+                    DateTime.now(DateTimeZone.getDefault()).minusDays(d).toDate(),
+                    DateTime.now(DateTimeZone.getDefault()).minusDays(d - ichiIndex).toDate()
+            ));
+        }
 
         List<Tick> ticks = Lists.newArrayList();
-        candles.getCandles().forEach(candle ->
+        candles.forEach(candle ->
                 ticks.add(new Tick(
                         new DateTime(candle.getDateTime()),
                         candle.getOpenMid(),

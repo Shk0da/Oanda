@@ -1,14 +1,17 @@
 package com.oanda.bot.dao;
 
-import com.oanda.bot.model.*;
+import com.oanda.bot.StrategySteps;
+import com.oanda.bot.constants.Step;
+import com.oanda.bot.model.Candle;
+import com.oanda.bot.model.Candle.Candles;
+import com.oanda.bot.model.Instrument;
+import com.oanda.bot.model.Order;
+import com.oanda.bot.model.Pivot;
 import com.oanda.bot.service.AccountService;
+import com.oanda.bot.util.ModelUtil;
 import jersey.repackaged.com.google.common.collect.Lists;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import com.oanda.bot.StrategySteps;
-import com.oanda.bot.constants.Step;
-import com.oanda.bot.model.Candle.Candles;
-import com.oanda.bot.util.ModelUtil;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -29,7 +32,6 @@ import java.io.LineNumberReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Repository("mainDao")

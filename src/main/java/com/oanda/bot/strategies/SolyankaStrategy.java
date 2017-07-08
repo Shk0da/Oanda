@@ -1,8 +1,5 @@
 package com.oanda.bot.strategies;
 
-import java.time.LocalTime;
-import java.util.Map;
-
 import com.oanda.bot.strategies.enums.MovingAverageType;
 import com.oanda.bot.strategies.indicators.EMAIndicator;
 import com.oanda.bot.strategies.indicators.WilderRSIIndicator;
@@ -35,6 +32,9 @@ import eu.verdelhan.ta4j.trading.rules.CrossedUpIndicatorRule;
 import eu.verdelhan.ta4j.trading.rules.OverIndicatorRule;
 import eu.verdelhan.ta4j.trading.rules.UnderIndicatorRule;
 import lombok.Data;
+
+import java.time.LocalTime;
+import java.util.Map;
 
 @Data
 public class SolyankaStrategy {

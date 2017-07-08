@@ -1,11 +1,7 @@
 package com.oanda.bot.strategies.rules.stops;
 
 import com.oanda.bot.strategies.enums.StopType;
-import eu.verdelhan.ta4j.Decimal;
-import eu.verdelhan.ta4j.Order;
-import eu.verdelhan.ta4j.Tick;
-import eu.verdelhan.ta4j.Trade;
-import eu.verdelhan.ta4j.TradingRecord;
+import eu.verdelhan.ta4j.*;
 import eu.verdelhan.ta4j.indicators.simple.ClosePriceIndicator;
 import eu.verdelhan.ta4j.trading.rules.AbstractRule;
 

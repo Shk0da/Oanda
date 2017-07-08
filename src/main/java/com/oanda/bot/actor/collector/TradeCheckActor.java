@@ -1,12 +1,12 @@
 package com.oanda.bot.actor.collector;
 
-import com.oanda.bot.model.Order;
-import com.oanda.bot.service.AccountService;
 import com.oanda.bot.actor.abstracts.AbstractInstrumentActor;
 import com.oanda.bot.constants.Event;
 import com.oanda.bot.constants.Event.TradeOpened;
 import com.oanda.bot.model.Instrument;
+import com.oanda.bot.model.Order;
 import com.oanda.bot.model.Trade.Trades;
+import com.oanda.bot.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class TradeCheckActor extends AbstractInstrumentActor {

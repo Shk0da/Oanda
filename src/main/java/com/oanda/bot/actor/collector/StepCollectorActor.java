@@ -2,6 +2,7 @@ package com.oanda.bot.actor.collector;
 
 import com.oanda.bot.actor.abstracts.StepActor;
 import com.oanda.bot.constants.Constants;
+import com.oanda.bot.constants.Event;
 import com.oanda.bot.constants.Step;
 import com.oanda.bot.dao.MainDao;
 import com.oanda.bot.model.Candle;
@@ -10,7 +11,6 @@ import com.oanda.bot.service.AccountService;
 import com.oanda.bot.util.ModelUtil;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import com.oanda.bot.constants.Event;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;

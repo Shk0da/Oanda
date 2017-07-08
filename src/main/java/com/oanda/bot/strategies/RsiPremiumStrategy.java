@@ -1,10 +1,5 @@
 package com.oanda.bot.strategies;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import com.oanda.bot.strategies.indicators.CCI;
 import com.oanda.bot.strategies.indicators.RSI;
 import eu.verdelhan.ta4j.Decimal;
@@ -15,6 +10,11 @@ import eu.verdelhan.ta4j.indicators.trackers.bollinger.BollingerBandsMiddleIndic
 import eu.verdelhan.ta4j.indicators.trackers.bollinger.BollingerBandsUpperIndicator;
 import lombok.Data;
 import lombok.NonNull;
+
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 @Data
 public class RsiPremiumStrategy {

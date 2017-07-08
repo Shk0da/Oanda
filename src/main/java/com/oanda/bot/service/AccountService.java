@@ -1,13 +1,12 @@
 package com.oanda.bot.service;
 
-import com.oanda.bot.model.*;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import org.joda.time.DateTime;
 import com.oanda.bot.constants.Step;
 import com.oanda.bot.model.*;
 import com.oanda.bot.model.Candle.Candles;
 import com.oanda.bot.model.Trade.Trades;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import org.joda.time.DateTime;
 
 import java.util.List;
 
