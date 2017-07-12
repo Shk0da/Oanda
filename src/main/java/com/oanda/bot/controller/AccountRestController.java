@@ -16,10 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api")
@@ -64,7 +62,7 @@ public class AccountRestController {
                         step,
                         storage.getInstrument(instrument),
                         DateTime.now(DateTimeZone.getDefault()).minusDays(d).toDate(),
-                        DateTime.now(DateTimeZone.getDefault()).minusDays(d - ichiIndex).toDate()
+                        DateTime.now(DateTimeZone.getDefault()).minusDays((d - ichiIndex) >= 0 ? (d - ichiIndex) : 0).toDate()
                 ));
             }
 

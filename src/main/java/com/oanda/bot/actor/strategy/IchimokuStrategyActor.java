@@ -209,7 +209,7 @@ public class IchimokuStrategyActor extends AbstractInstrumentActor {
                     step,
                     instrument,
                     DateTime.now(DateTimeZone.getDefault()).minusDays(d).toDate(),
-                    DateTime.now(DateTimeZone.getDefault()).minusDays(d - ichiIndex).toDate()
+                    DateTime.now(DateTimeZone.getDefault()).minusDays((d - ichiIndex) >= 0 ? (d - ichiIndex) : 0).toDate()
             ));
         }
 
