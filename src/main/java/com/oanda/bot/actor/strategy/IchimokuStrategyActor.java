@@ -90,16 +90,20 @@ public class IchimokuStrategyActor extends AbstractInstrumentActor {
         log.info(String.format("Tick added in %s series, close price is %.5f", instrument.getDisplayName(), newTick.getClosePrice().toDouble()));
         int endIndex = series.getEnd();
 
-        if (strategy.shouldEnter(endIndex)) {
-            if (tradingRecord.enter(endIndex)) {
-                currentRate.setDirection(DIRECTION_UP);
-                initOrder();
+        try {
+            if (strategy.shouldEnter(endIndex)) {
+                if (tradingRecord.enter(endIndex)) {
+                    currentRate.setDirection(DIRECTION_UP);
+                    initOrder();
+                }
+            } else if (strategy.shouldExit(endIndex)) {
+                if (tradingRecord.exit(endIndex)) {
+                    currentRate.setDirection(DIRECTION_DOWN);
+                    initOrder();
+                }
             }
-        } else if (strategy.shouldExit(endIndex)) {
-            if (tradingRecord.exit(endIndex)) {
-                currentRate.setDirection(DIRECTION_DOWN);
-                initOrder();
-            }
+        } catch (Exception ex) {
+            log.info("..." + ex.getLocalizedMessage());
         }
     }
 

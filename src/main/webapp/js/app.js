@@ -129,6 +129,67 @@ $(document).ready(function ($) {
         });
     }
 
+    updateBalance();
+    function updateBalance() {
+        $.ajax({url: "/api/balance"}).done(function (data) {
+            var labels = [];
+            var datasets = [];
+            var values = [];
+
+            var i = 0;
+            for (var time in data) {
+                if (!data.hasOwnProperty(time)) return;
+                labels[i] = timeConverter(time);
+                values[i] = data[time];
+                i++
+            }
+
+            datasets.push(
+                {
+                    data: values,
+                    fill: false
+                }
+            );
+
+            var balanceGraph = document.getElementById("balanceGraph").getContext("2d");
+            balanceGraph.canvas.width = 300;
+            balanceGraph.canvas.height = 80;
+            new Chart(balanceGraph, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            display: false,
+                            stacked: true
+                        }],
+                        yAxes: [{
+                            display: false,
+                            stacked: true
+                        }]
+                    },
+                    legend: {
+                        display: false
+                    },
+                    layout: {
+                        padding: {
+                            left: 50,
+                            right: 0,
+                            top: 0,
+                            bottom: 0
+                        }
+                    }
+                }
+            });
+
+            var wrpa1 = $("#balanceGraph").parent();
+            wrpa1.css('position', 'relative').css('margin-top', '-25%');
+        });
+    }
+
     $("#resetWork").click(function () {
         $.ajax({url: "/api/reset"}).done(function (data) {
             alert(data);
@@ -287,8 +348,12 @@ $(document).ready(function ($) {
     }
 
     setInterval(function () {
-        updateAccountInfo()
+        updateAccountInfo();
     }, 60000);
+
+    setInterval(function () {
+        updateBalance();
+    }, 3600000);
 
     setInterval(function () {
         updateCandles()

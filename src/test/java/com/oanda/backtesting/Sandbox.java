@@ -62,7 +62,7 @@ public class Sandbox {
 
     @Test
     public void profit() throws Exception {
-        TimeSeries series = new TimeSeries("EUR_USD", getTicks("EUR_USD", Step.H1, 365));
+        TimeSeries series = new TimeSeries("EUR_USD", getTicks("EUR_USD", Step.M5, 7));
 
         // Running the strategy
         Strategy strategy = IchimokuCloudTradingStrategy.buildStrategy(series);
@@ -201,13 +201,12 @@ public class Sandbox {
 
     @Test
     public void walkForward() throws Exception {
-        TimeSeries series = new TimeSeries("USD_CHF", getTicks("USD_CHF", Step.M1, 5));
+        TimeSeries series = new TimeSeries("USD_CHF", getTicks("USD_CHF", Step.M5, 5));
         List<TimeSeries> subseries = series.split(Period.days(6), Period.days(7));
 
         // Building the map of strategies
         HashMap<Strategy, String> strategies = new HashMap<>();
-        strategies.put(IchimokuMacdEma.buildStrategy(series), "IchimokuMacdEma");
-        strategies.put(IchimokuMacdEmaSecond.buildStrategy(series), "IchimokuMacdEmaSecond");
+        strategies.put(IchimokuRSI.buildStrategy(series), "IchimokuRSI");
         strategies.put(IchimokuCloudTradingStrategy.buildStrategy(series), "IchimokuCloudTradingStrategy");
 
         // The analysis criterion

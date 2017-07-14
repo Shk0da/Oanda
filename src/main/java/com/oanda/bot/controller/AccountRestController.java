@@ -39,6 +39,11 @@ public class AccountRestController {
         return accountService.getAccountDetails().getAccount();
     }
 
+    @RequestMapping("balance")
+    public Map<DateTime, Double> balance() throws Exception {
+        return mainDao.getBalance(config.getConfig("account").getConfig("oandaAccountService").getString("accountId"));
+    }
+
     @RequestMapping("candles")
     public Map<String, List<Candle>> candles() throws Exception {
         Map<String, List<Candle>> prices = Maps.newHashMap();

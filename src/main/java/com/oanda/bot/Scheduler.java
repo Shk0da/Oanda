@@ -3,6 +3,9 @@ package com.oanda.bot;
 import akka.actor.ActorSystem;
 import com.oanda.bot.constants.Constants;
 import com.oanda.bot.constants.Event;
+import com.oanda.bot.dao.MainDao;
+import com.oanda.bot.model.Accounts;
+import com.oanda.bot.service.AccountService;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.joda.time.DateTime;
@@ -29,6 +32,12 @@ public class Scheduler implements Constants {
 	
 	@Autowired 
 	private TaskScheduler taskScheduler;
+
+	@Autowired
+	private AccountService accountService;
+
+	@Autowired
+	private MainDao mainDao;
 
 	@Autowired
 	public Scheduler(ActorSystem actorSystem) {
@@ -137,6 +146,12 @@ public class Scheduler implements Constants {
 		}
 		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.TGI_FRIDAY,
 				actorSystem.guardian());
+	}
+
+	@Scheduled(cron = "${main.scheduler.update-balance.cron}")
+	public void updateAccountBalance() {
+		Accounts.Account account = accountService.getAccountDetails().getAccount();
+		mainDao.insertBalance(account.getId(), account.getCurrency(), account.getBalance());
 	}
 
 }
