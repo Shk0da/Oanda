@@ -1,11 +1,13 @@
 package com.oanda.backtesting;
 
 import com.oanda.bot.InstrumentStorage;
-import com.oanda.bot.TradingBotApplication;
 import com.oanda.bot.constants.Step;
 import com.oanda.bot.dao.MainDao;
 import com.oanda.bot.model.Candle;
-import com.oanda.bot.strategies.*;
+import com.oanda.bot.strategies.GlobalExtremaStrategy;
+import com.oanda.bot.strategies.IchimokuCloudTradingStrategy;
+import com.oanda.bot.strategies.IchimokuRSI;
+import com.oanda.bot.strategies.SolyankaStrategy;
 import eu.verdelhan.ta4j.*;
 import eu.verdelhan.ta4j.analysis.criteria.*;
 import jersey.repackaged.com.google.common.collect.Lists;
@@ -17,8 +19,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.SpringApplicationContextLoader;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = TradingBotApplication.class, loader = SpringApplicationContextLoader.class)
 public class Sandbox {
 
     public static final String ANSI_RESET = "\u001B[0m";

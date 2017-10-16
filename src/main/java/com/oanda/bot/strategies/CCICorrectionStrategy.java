@@ -11,7 +11,7 @@ import eu.verdelhan.ta4j.trading.rules.UnderIndicatorRule;
 /**
  * CCI Correction Strategy
  * <p>
- * @see http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cci_correction
+ * @see "http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cci_correction"
  */
 public class CCICorrectionStrategy {
 

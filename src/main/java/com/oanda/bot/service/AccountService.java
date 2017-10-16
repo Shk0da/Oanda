@@ -27,8 +27,6 @@ public interface AccountService {
 
 	Instrument getInstrument(String pair);
 
-	Instrument getInstrument(String left, String right);
-
 	Order.Orders getOrders(Instrument instrument);
 
 	Pivot getPivot(Instrument instrument);

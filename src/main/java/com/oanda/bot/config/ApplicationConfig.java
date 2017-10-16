@@ -1,7 +1,9 @@
-package com.oanda.bot;
+package com.oanda.bot.config;
 
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import com.oanda.bot.ApplicationContextProvider;
+import com.oanda.bot.InstrumentStorage;
 import com.oanda.bot.actor.InstrumentActor;
 import com.oanda.bot.actor.SpringDIActor;
 import com.oanda.bot.model.Instrument;
@@ -20,7 +22,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAutoConfiguration
 @Configuration
 @EnableScheduling
-public class ApplicationConfiguration {
+public class ApplicationConfig {
 
 	private static final Config config = ConfigFactory.load();
 
@@ -66,5 +68,4 @@ public class ApplicationConfiguration {
 	public Logger getLogger() {
 		return LoggerFactory.getLogger("mainLog");
 	}
-	
 }

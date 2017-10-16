@@ -30,7 +30,7 @@ public class BottomIndicator extends CachedIndicator<Boolean>{
 		
 		Decimal c = tick.getClosePrice();
 		
-		Map<Decimal,Integer> map = new TreeMap<Decimal,Integer>();
+		Map<Decimal,Integer> map = new TreeMap<>();
 		for(int i=index-timeFrame;i<index;i++){
 			Tick t = this.getTimeSeries().getTick(i);
 			
@@ -75,7 +75,7 @@ public class BottomIndicator extends CachedIndicator<Boolean>{
 			return null;
 		}
 
-		Map<Decimal,Integer> sortMap = new TreeMap<Decimal,Integer>(new MapKeyComparator());
+		Map<Decimal,Integer> sortMap = new TreeMap<>(new MapKeyComparator());
 
 		sortMap.putAll(map);
 

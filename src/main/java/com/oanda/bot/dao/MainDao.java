@@ -87,7 +87,7 @@ public class MainDao {
                 .replaceAll(PH_INSTRUMENT, instrument.toString()).replaceAll(PH_FRACTALS, FRACTALS_PREFIX);
         Map<String, Object> params = new HashMap<>();
         params.put(PARAM_FRACTAL_TIME, fractal.getDateTime());
-        params.put(PARAM_DIRECTION, Integer.valueOf(fractal.getDirection()));
+        params.put(PARAM_DIRECTION, fractal.getDirection());
         params.put(PARAM_BREAKING_TIME, fractal.getBrokenDateTime());
         int count = npJdbcTemplate.update(script, params);
         return count;
@@ -175,7 +175,7 @@ public class MainDao {
                 .replaceAll(PH_FRACTALS, FRACTALS_PREFIX);
         try {
             Map<String, Object> params = new HashMap<>();
-            params.put(PARAM_DIRECTION, Integer.valueOf(direction));
+            params.put(PARAM_DIRECTION, direction);
             Candle candle = npJdbcTemplate.queryForObject(script, params, new FractalRowMapper());
             return candle;
         } catch (EmptyResultDataAccessException e) {
@@ -258,7 +258,7 @@ public class MainDao {
                 .replaceAll(PH_FRACTALS, FRACTALS_PREFIX);
         try {
             Map<String, Object> params = new HashMap<>();
-            params.put(PARAM_DIRECTION, Integer.valueOf(direction));
+            params.put(PARAM_DIRECTION, direction);
             Candle candle = npJdbcTemplate.queryForObject(script, params, new FractalRowMapper());
             return candle;
         } catch (EmptyResultDataAccessException e) {
@@ -272,28 +272,24 @@ public class MainDao {
         Pivot pivot = new Pivot();
         pivot.setInstrument(instrument);
         try {
-            pivot = jdbcTemplate.queryForObject(script, new RowMapper<Pivot>() {
-
-                @Override
-                public Pivot mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Pivot pivot = new Pivot();
-                    pivot.setTime(new DateTime(rs.getTimestamp(1), DateTimeZone.getDefault()));
-                    pivot.setInstrument(instrument);
-                    pivot.setR3(rs.getFloat(2));
-                    pivot.setR2(rs.getFloat(3));
-                    pivot.setR1(rs.getFloat(4));
-                    pivot.setPp(rs.getFloat(5));
-                    pivot.setS1(rs.getFloat(6));
-                    pivot.setS2(rs.getFloat(7));
-                    pivot.setS3(rs.getFloat(8));
-                    pivot.setM0(rs.getFloat(9));
-                    pivot.setM1(rs.getFloat(10));
-                    pivot.setM2(rs.getFloat(11));
-                    pivot.setM3(rs.getFloat(12));
-                    pivot.setM4(rs.getFloat(13));
-                    pivot.setM5(rs.getFloat(14));
-                    return pivot;
-                }
+            pivot = jdbcTemplate.queryForObject(script, (rs, rowNum) -> {
+                Pivot pivot1 = new Pivot();
+                pivot1.setTime(new DateTime(rs.getTimestamp(1), DateTimeZone.getDefault()));
+                pivot1.setInstrument(instrument);
+                pivot1.setR3(rs.getFloat(2));
+                pivot1.setR2(rs.getFloat(3));
+                pivot1.setR1(rs.getFloat(4));
+                pivot1.setPp(rs.getFloat(5));
+                pivot1.setS1(rs.getFloat(6));
+                pivot1.setS2(rs.getFloat(7));
+                pivot1.setS3(rs.getFloat(8));
+                pivot1.setM0(rs.getFloat(9));
+                pivot1.setM1(rs.getFloat(10));
+                pivot1.setM2(rs.getFloat(11));
+                pivot1.setM3(rs.getFloat(12));
+                pivot1.setM4(rs.getFloat(13));
+                pivot1.setM5(rs.getFloat(14));
+                return pivot1;
             });
         } catch (EmptyResultDataAccessException e) {
             logger.error("Could not find pivot.");
@@ -402,7 +398,7 @@ public class MainDao {
 
     public Candle insertCandles(Candles candles) {
         String script = insertCandleScript.replaceAll(PH_STEP, candles.getGranularity().toString())
-                .replaceAll(PH_INSTRUMENT, candles.getInstrument().toString()).replaceAll(PH_CANDLES, CANDLES_PREFIX);
+                .replaceAll(PH_INSTRUMENT, candles.getInstrument()).replaceAll(PH_CANDLES, CANDLES_PREFIX);
         Candle[] array = ModelUtil.getCompletedCandles(candles).toArray(new Candle[]{});
         if (array.length > 0) {
             SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(array);
@@ -410,7 +406,7 @@ public class MainDao {
             int linesAffected = Arrays.stream(counts).sum();
             if (linesAffected == array.length) {
                 logger.debug("inserted " + linesAffected + " candles " + candles.getGranularity().toString());
-                Optional<Candle> lastCompletedCandle = Stream.of(array).max(Comparator.comparing(c -> c.getTime()));
+                Optional<Candle> lastCompletedCandle = Stream.of(array).max(Comparator.comparing(Candle::getTime));
                 if (lastCompletedCandle.isPresent()) {
                     return lastCompletedCandle.get();
                 } else {

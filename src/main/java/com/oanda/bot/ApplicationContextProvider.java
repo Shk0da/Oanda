@@ -10,7 +10,7 @@ public class ApplicationContextProvider {
 	 * Get access to the Spring ApplicationContext from everywhere in your
 	 * Application.
 	 * 
-	 * @return
+	 * @return ApplicationContext
 	 */
 	public static ApplicationContext getApplicationContext() {
 		return ctx;
@@ -23,5 +23,4 @@ public class ApplicationContextProvider {
 	public static void setApplicationContext(ApplicationContext applicationContext) {
 		ctx = applicationContext;
 	}
-
 }

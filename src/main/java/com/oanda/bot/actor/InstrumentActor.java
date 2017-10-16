@@ -6,7 +6,6 @@ import com.oanda.bot.actor.abstracts.AbstractInstrumentActor;
 import com.oanda.bot.actor.analyzer.AnalyzerActor;
 import com.oanda.bot.actor.collector.CollectorActor;
 import com.oanda.bot.actor.collector.NewsCheckActor;
-import com.oanda.bot.actor.strategy.FractalStrategyActor;
 import com.oanda.bot.actor.strategy.IchimokuStrategyActor;
 import com.oanda.bot.constants.Event;
 import com.oanda.bot.dao.MainDao;

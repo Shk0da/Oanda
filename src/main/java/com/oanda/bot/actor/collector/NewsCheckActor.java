@@ -29,16 +29,14 @@ public class NewsCheckActor extends AbstractInstrumentActor {
 	@Override
 	public void onReceive(Object arg0) throws Exception {
 		List<CalendarEvent> events = accountService.getCalendarEvents(instrument, 1);
-		events.stream().forEach(event -> {
-			scheduler.schedule(() -> {
-				if (event.getImpact() > 1) {
-					log.info("News will be published in 5 minutes: {} (impact: {})", event.getTitle(),
-							event.getImpact());
-					getContext().actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY)
-							.tell(Event.NEWS_IN_5, self());
-				}
-			}, event.getDateTime().minusMinutes(5).toDate());
-		});
+		events.stream().forEach(event -> scheduler.schedule(() -> {
+            if (event.getImpact() > 1) {
+                log.info("News will be published in 5 minutes: {} (impact: {})", event.getTitle(),
+                        event.getImpact());
+                getContext().actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY)
+                        .tell(Event.NEWS_IN_5, self());
+            }
+        }, event.getDateTime().minusMinutes(5).toDate()));
 	}
 
 }

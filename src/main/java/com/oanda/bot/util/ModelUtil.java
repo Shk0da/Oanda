@@ -13,7 +13,7 @@ public class ModelUtil {
 	private static List<Candle> getCandles(Candles candles, boolean completed) {
 		List<Candle> list = candles.getCandles();
 
-		Predicate<Candle> isComplete = p -> p.isComplete();
+		Predicate<Candle> isComplete = Candle::isComplete;
 
 		Map<Boolean, List<Candle>> splittedCandles = list.stream().collect(Collectors.partitioningBy(isComplete));
 

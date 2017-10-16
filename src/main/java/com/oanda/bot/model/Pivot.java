@@ -63,7 +63,7 @@ public class Pivot {
 			log.error(String.format("Could not find nearest pivot for %.5f with direction %d and pivot list: %s", value,
 					trend, this));
 		}
-		return nearest.orElse(defaultValue).doubleValue();
+		return nearest.orElse(defaultValue);
 	}
 
 	public double getNearestNoMiddle(double value, double spread, int trend) {

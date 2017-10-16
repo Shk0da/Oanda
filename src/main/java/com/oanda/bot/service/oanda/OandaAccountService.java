@@ -108,17 +108,6 @@ public class OandaAccountService implements AccountService {
     }
 
     @Override
-    public Instrument getInstrument(String left, String right) {
-        Optional<Instruments> response = getResponse(instrumentsUrl(left, right), HttpMethod.GET, headers(), Instruments.class);
-        if (response.isPresent()) {
-            List<Instrument> instruments = response.get().getInstruments();
-            return instruments.stream().findFirst().orElse(null);
-        } else {
-            return null;
-        }
-    }
-
-    @Override
     public Order.Orders getOrders(Instrument instrument) {
         Optional<Order.Orders> response = getResponse(getOrdersUrl(instrument), HttpMethod.GET, headers(), Order.Orders.class);
         return response.orElse(new Order.Orders());

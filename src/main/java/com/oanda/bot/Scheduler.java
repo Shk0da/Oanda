@@ -132,10 +132,8 @@ public class Scheduler implements Constants {
 		}
 		fireCollectPivot();
 		checkNews();
-		taskScheduler.schedule(() -> {
-			actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.WORK,
-					actorSystem.guardian());
-		}, DateTime.now().plusSeconds(15).toDate());
+		taskScheduler.schedule(() -> actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.WORK,
+                actorSystem.guardian()), DateTime.now().plusSeconds(15).toDate());
 	}
 
 	@Scheduled(cron = "${main.scheduler.end-work.cron}")
@@ -153,5 +151,4 @@ public class Scheduler implements Constants {
 		Accounts.Account account = accountService.getAccountDetails().getAccount();
 		mainDao.insertBalance(account.getId(), account.getCurrency(), account.getBalance());
 	}
-
 }

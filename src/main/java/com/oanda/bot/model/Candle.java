@@ -100,16 +100,16 @@ public class Candle {
             if (instrument == null) {
                 return "No candles";
             }
-            String string = "Candles [instrument=" + instrument + ", granularity=" + granularity + ", candles=\n";
+            StringBuilder string = new StringBuilder("Candles [instrument=" + instrument + ", granularity=" + granularity + ", candles=\n");
             if (candles != null) {
                 for (Candle c : candles) {
-                    string += "\t";
-                    string += c.toString();
-                    string += "\n";
+                    string.append("\t");
+                    string.append(c.toString());
+                    string.append("\n");
                 }
             }
-            string += "]";
-            return string;
+            string.append("]");
+            return string.toString();
         }
     }
 

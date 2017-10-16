@@ -14,8 +14,7 @@ public class StrategySteps {
 	private Step tradingStep;
 
 	@Autowired
-	public StrategySteps(@Value("${main.trendStep}") String trendStep,
-			@Value("${main.tradingStep}") String tradingStep) {
+	public StrategySteps(@Value("${main.trendStep}") String trendStep, @Value("${main.tradingStep}") String tradingStep) {
 		this.trendStep = Step.valueOf(trendStep);
 		this.tradingStep = Step.valueOf(tradingStep);
 		log.info(String.format("Strategy steps are: %s and %s", tradingStep(), trendStep()));

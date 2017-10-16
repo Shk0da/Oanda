@@ -235,9 +235,9 @@ public class RsiPremiumStrategy {
     }
 
     private Integer macdTrendSignal(Decimal macdVal) {
-        if (macdVal.isGreaterThan(Decimal.valueOf(new Double(0.00005)))) {
+        if (macdVal.isGreaterThan(Decimal.valueOf(0.00005))) {
             return 1;
-        } else if (macdVal.isLessThan(Decimal.valueOf(new Double(-0.00005)))) {
+        } else if (macdVal.isLessThan(Decimal.valueOf(-0.00005))) {
             return -1;
         } else {
             return 0;

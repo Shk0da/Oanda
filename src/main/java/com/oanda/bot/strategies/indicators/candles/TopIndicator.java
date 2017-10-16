@@ -25,15 +25,10 @@ public class TopIndicator extends CachedIndicator<Boolean>{
 		
 		Decimal c = tick.getClosePrice();
 		
-		Map<Decimal,Integer> map = new TreeMap<Decimal,Integer>();
+		Map<Decimal,Integer> map = new TreeMap<>();
 		for(int i=index-timeFrame;i<index;i++){
 			Tick t = this.getTimeSeries().getTick(i);
-			
-			/*if(map.containsKey(t.getOpenPrice())){
-				map.put(t.getOpenPrice(), map.get(t.getOpenPrice())+1);
-			}else{
-				map.put(t.getOpenPrice(), 1);
-			}*/
+
 			if(map.containsKey(t.getMaxPrice())){
 				map.put(t.getMaxPrice(), map.get(t.getMaxPrice())+1);
 			}else{

@@ -16,7 +16,7 @@ import eu.verdelhan.ta4j.trading.rules.UnderIndicatorRule;
 /**
  * Moving momentum strategy.
  * <p>
- * @see http://stockcharts.com/help/doku.php?id=chart_school:trading_strategies:moving_momentum
+ * @see "http://stockcharts.com/help/doku.php?id=chart_school:trading_strategies:moving_momentum"
  */
 public class MovingMomentumStrategy {
 
