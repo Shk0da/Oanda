@@ -19,8 +19,6 @@ import java.util.stream.Collectors;
 @Repository
 public class CandleRepository {
 
-    private static final String serName = "candles.ser";
-
     private final Map<String, TreeMap<DateTime, Candle>> candles = Maps.newHashMap();
 
     public List<Candle> getCandles(String key) {

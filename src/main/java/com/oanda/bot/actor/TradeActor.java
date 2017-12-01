@@ -231,9 +231,9 @@ public class TradeActor extends UntypedAbstractActor {
         Trade.Trades trades = accountService.getTrades(instrument);
         for (Trade trade : trades.getTrades()) {
             if (globalBasket) {
-                profit += trade.getUnrealizedPL(); //todo проверить что это оно
+                profit += trade.getUnrealizedPL();
             } else if (trade.getInstrument().equals(instrument.getInstrument())) {
-                profit += trade.getUnrealizedPL(); //todo проверить что это оно
+                profit += trade.getUnrealizedPL();
             }
         }
 
@@ -287,7 +287,6 @@ public class TradeActor extends UntypedAbstractActor {
         double ask = price.getAsk();
         double bid = price.getBid();
         double spread = ask - bid;
-        log.info("Spread {}: {}", instrument.getDisplayName(), spread);
         double predictPrice = predict.getPrice();
 
         if (predictPrice > 0 && predictPrice > ask + spread) return Signal.UP;
