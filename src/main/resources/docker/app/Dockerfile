@@ -1,4 +1,4 @@
 FROM openjdk:8-jdk-alpine
 VOLUME /tmp
-ADD oandabot.war oandabot.war
-ENTRYPOINT exec java -Djava.security.egd=file:/dev/./urandom -jar /oandabot.war
+ADD oanda-2.0.jar oanda-2.0.jar
+ENTRYPOINT exec java -Djava.security.egd=file:/dev/./urandom -jar /oanda-2.0.jar

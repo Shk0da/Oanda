@@ -1,0 +1,54 @@
+import sun.tools.jar.resources.jar
+
+/**
+ * Oanda trading Bot V2
+ */
+
+description 'Oanda trading Bot'
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+
+jar {
+    baseName = 'oanda'
+    version = '2.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web")
+    compile("org.springframework.boot:spring-boot-starter-social-twitter")
+    compile("joda-time:joda-time")
+    compile("com.google.guava:guava:23.0")
+    compile("com.typesafe.akka:akka-actor_2.11:2.5.7")
+
+    compile("org.nd4j:nd4j-x86:0.4-rc3.8")
+    compile("org.deeplearning4j:deeplearning4j-core:0.9.1")
+
+    compileOnly("org.springframework.boot:spring-boot-starter-tomcat")
+    compileOnly("org.projectlombok:lombok")
+
+    testCompile("junit:junit")
+}
+
+buildscript {
+
+    apply plugin: 'project-report'
+    apply plugin: 'build-dashboard'
+
+    repositories {
+        mavenCentral()
+    }
+    
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.8.RELEASE")
+    }
+}
