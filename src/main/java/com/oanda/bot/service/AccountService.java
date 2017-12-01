@@ -162,7 +162,9 @@ public class AccountService {
     }
 
     public Order createOrder(Order order) {
-        HttpHeaders headers = headers().getHeaders();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + config.getString("token"));
+        headers.set("X-Accept-Datetime-Format", "UNIX");
         headers.set("Content-Type", "application/json");
         headers.set("X-HTTP-Method-Override", "POST");
 
@@ -172,7 +174,9 @@ public class AccountService {
     }
 
     public Trade updateTrade(Trade trade) {
-        HttpHeaders headers = headers().getHeaders();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + config.getString("token"));
+        headers.set("X-Accept-Datetime-Format", "UNIX");
         headers.set("Content-Type", "application/json");
         headers.set("X-HTTP-Method-Override", "PUT");
 
@@ -184,7 +188,9 @@ public class AccountService {
     }
 
     public Order updateOrder(Order order) {
-        HttpHeaders headers = headers().getHeaders();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + config.getString("token"));
+        headers.set("X-Accept-Datetime-Format", "UNIX");
         headers.set("Content-Type", "application/json");
         headers.set("X-HTTP-Method-Override", "PUT");
 

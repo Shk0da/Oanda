@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Scope("prototype")
@@ -36,15 +38,20 @@ public class CollectorActor extends UntypedAbstractActor {
     }
 
     @Override
-    public void onReceive(Object message) throws Throwable {
+    public void onReceive(Object message) {
         if (Messages.WORK.equals(message)) {
             List<Candle> candles = accountService.getCandles(instrument, step, getLastCollect()).getCandles();
+            candles = candles.stream().filter(Objects::nonNull).collect(Collectors.toList());
 
             if (!candles.isEmpty()) {
                 log.info("Candle list size: {}", candles.size());
                 candleRepository.addCandles(instrument, step, candles);
-                getContext().actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
-                        .tell(candles.get(candles.size() - 1), sender());
+
+                Candle lastCandle = candles.get(candles.size() - 1);
+                if (lastCandle != null) {
+                    getContext().actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
+                            .tell(lastCandle, sender());
+                }
             }
         }
     }

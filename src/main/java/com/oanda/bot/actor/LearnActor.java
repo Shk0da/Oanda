@@ -11,6 +11,7 @@ import com.oanda.bot.util.learning.LSTMNetwork;
 import com.oanda.bot.util.learning.StockDataSetIterator;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
@@ -64,7 +65,7 @@ public class LearnActor extends UntypedAbstractActor {
     }
 
     @Override
-    public void preStart() throws Exception {
+    public void preStart() {
         predicatorActor = getContext().actorOf(
                 Props.create(SpringDIActor.class, PredicatorActor.class, instrument, step), "PredicatorActor_" + instrument.getInstrument() + "_" + step.name()
         );
@@ -72,12 +73,14 @@ public class LearnActor extends UntypedAbstractActor {
     }
 
     @Override
-    public void onReceive(Object message) throws Throwable {
-        if (Messages.WORK.equals(message)) {
+    public void onReceive(Object message) {
+        if (message instanceof Candle) {
             if (!status.equals(Status.TRAINED)) {
                 train();
             }
+        }
 
+        if (Messages.WORK.equals(message)) {
             if (status.equals(Status.READY)) {
                 predicatorActor.tell(new Messages.LearnModel(
                         getModel(),
@@ -96,6 +99,7 @@ public class LearnActor extends UntypedAbstractActor {
         }
     }
 
+    @Synchronized
     private void train() {
         List<Candle> candles = candleRepository.getCandles(instrument, step);
         if (candles.isEmpty()) return;

@@ -8,10 +8,8 @@ import com.oanda.bot.domain.Step;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
-import java.io.*;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -24,20 +22,6 @@ public class CandleRepository {
     private static final String serName = "candles.ser";
 
     private final Map<String, TreeMap<DateTime, Candle>> candles = Maps.newHashMap();
-
-    public CandleRepository() {
-        try {
-            File serFile = new File(serName);
-            if (serFile.exists() && serFile.isFile() && serFile.length() > 0 && serFile.canRead()) {
-                FileInputStream fis = new FileInputStream(serFile);
-                ObjectInputStream ois = new ObjectInputStream(fis);
-                candles.putAll((Map<String, TreeMap<DateTime, Candle>>) ois.readObject());
-                ois.close();
-            }
-        } catch (ClassNotFoundException | IOException ex) {
-            log.error(ex.getMessage());
-        }
-    }
 
     public List<Candle> getCandles(String key) {
         return Lists.newArrayList(this.candles.getOrDefault(key, Maps.newTreeMap()).values());
@@ -77,16 +61,6 @@ public class CandleRepository {
     public Candle getLastCandle(Instrument instrument, Step step) {
         List<Candle> current = getCandles(getKey(instrument, step));
         return current.isEmpty() ? null : current.get(current.size() - 1);
-    }
-
-    @Scheduled(cron = "0 0/1 * * * *")
-    public void saveState() {
-        try (FileOutputStream fos = new FileOutputStream(serName);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(candles);
-        } catch (IOException ex) {
-            log.error(ex.getMessage());
-        }
     }
 
     private String getKey(Instrument instrument, Step step) {

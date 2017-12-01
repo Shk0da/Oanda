@@ -13,6 +13,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -22,7 +23,10 @@ import java.util.List;
 @NoArgsConstructor
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Candle {
+public class Candle implements Serializable {
+
+    private static final long serialVersionUID = -1892561327013038124L;
+
     @JsonDeserialize(using = StringDateTimeDeserializer.class)
     private DateTime time;
     private Mid mid = new Mid();

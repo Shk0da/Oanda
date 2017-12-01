@@ -7,13 +7,18 @@ import com.oanda.bot.domain.*;
 import com.oanda.bot.repository.CandleRepository;
 import com.oanda.bot.repository.InstrumentRepository;
 import com.oanda.bot.service.AccountService;
+import com.oanda.bot.util.DateTimeUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Slf4j
 @Scope("prototype")
@@ -95,7 +100,7 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     @Override
-    public void onReceive(Object message) throws Throwable {
+    public void onReceive(Object message) throws Exception {
         if (message instanceof Messages.WorkTime) {
             setWorkTime(((Messages.WorkTime) message).is);
             log.info("Now workTime is {}", isWorkTime());
@@ -106,20 +111,21 @@ public class TradeActor extends UntypedAbstractActor {
         if (message instanceof Candle) {
             setCurrentRate(((Candle) message));
             log.info("CurrentRate: {}", getCurrentRate());
+            learnActor.tell(message, self());
         }
 
         if (message instanceof Messages.Predict) {
+            log.info("Current {}: {}", instrument.getDisplayName(), getCurrentRate().getMid().getC());
             log.info("Predict {}: {}", instrument.getDisplayName(), ((Messages.Predict) message).getPrice());
             trade((Messages.Predict) message);
         }
 
         if (Messages.WORK.equals(message)) {
-            collectorActor.tell(message, self());
-            learnActor.tell(message, self());
+            collectorActor.tell(Messages.WORK, self());
             trailingPositions();
-        } else {
-            unhandled(message);
         }
+
+        unhandled(message);
     }
 
     private void trade(final Messages.Predict predict) {
@@ -143,10 +149,17 @@ public class TradeActor extends UntypedAbstractActor {
                     );
                 } else {
                     accountService.closeOrdersAndTrades(instrument);
+                    log.info("{}: Close orders and trades", instrument.getDisplayName());
                 }
 
                 order = new Order();
             }
+        }
+
+        List<Trade> trades = getTrades();
+        if (!trades.isEmpty()) {
+            log.info("We have active trades: {}. Waiting...", trades.size());
+            return;
         }
 
         if (order.getId() == null && price.getSpread() <= spreadMax) {
@@ -174,7 +187,9 @@ public class TradeActor extends UntypedAbstractActor {
         //GFD	The Order is “Good For Day” and will be cancelled at 5pm New York time
         //FOK	The Order must be immediately “Filled Or Killed”
         //IOC	The Order must be “Immediatedly paritally filled Or Cancelled”
-        order.setTimeInForce(Order.TimeInForce.GTC);
+        order.setTimeInForce(Order.TimeInForce.IOC);
+        order.setCancelledTime(DateTimeUtil.rfc3339(DateTime.now(DateTimeZone.getDefault()).plusDays(1)));
+        order.setGtdTime(DateTimeUtil.rfc3339(DateTime.now(DateTimeZone.getDefault()).plusDays(1)));
         order.setInstrument(instrument.toString());
         order.setPositionFill(Order.OrderPositionFill.DEFAULT);
         order.setType(Order.OrderType.MARKET);
@@ -195,17 +210,19 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private Order getCurrentOrder() {
-        Order.Orders orders = accountService.getOrders(instrument);
-        for (Order order : orders.getOrders()) {
-            if (order.getInstrument().equals(instrument.getInstrument())) {
-                return order;
-            }
-        }
+        List<Order> orders = accountService.getOrders(instrument).getOrders();
+        return orders.isEmpty() ? new Order() : orders.iterator().next();
+    }
 
-        return new Order();
+    private List<Trade> getTrades() {
+        return accountService.getTrades(instrument).getTrades();
     }
 
     private double getOrderPrice(OrderType type) {
+        if (currentRate == null) {
+            currentRate = candleRepository.getLastCandle(instrument, step);
+        }
+
         return OrderType.BUY.equals(type) ? currentRate.getBid().getH() : currentRate.getAsk().getL();
     }
 
@@ -220,6 +237,7 @@ public class TradeActor extends UntypedAbstractActor {
             }
         }
 
+        log.info("Profit {}: {}", instrument.getDisplayName(), profit);
         return profit;
     }
 
@@ -240,7 +258,7 @@ public class TradeActor extends UntypedAbstractActor {
             takeProfit = ask + spread + this.takeProfit * instrument.getPip();
         }
 
-        if (OrderType.BUY.equals(type)) {
+        if (OrderType.SELL.equals(type)) {
             takeProfit = bid - spread - this.takeProfit * instrument.getPip();
         }
 
@@ -257,7 +275,7 @@ public class TradeActor extends UntypedAbstractActor {
             stopLoss = ask - this.stopLoss * instrument.getPip();
         }
 
-        if (OrderType.BUY.equals(type)) {
+        if (OrderType.SELL.equals(type)) {
             stopLoss = bid + this.stopLoss * instrument.getPip();
         }
 
@@ -265,10 +283,11 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private Signal signal(Messages.Predict predict) {
-        Candle lastCandle = candleRepository.getLastCandle(instrument, step);
-        double ask = lastCandle.getAsk().getC();
-        double bid = lastCandle.getBid().getC();
+        Price price = accountService.getPrice(instrument);
+        double ask = price.getAsk();
+        double bid = price.getBid();
         double spread = ask - bid;
+        log.info("Spread {}: {}", instrument.getDisplayName(), spread);
         double predictPrice = predict.getPrice();
 
         if (predictPrice > 0 && predictPrice > ask + spread) return Signal.UP;
@@ -278,7 +297,9 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private Boolean isActive() {
-        return isWorkTime() && (accountService.getAccountDetails().getBalance() > balanceLimit);
+        double accountBalance = accountService.getAccountDetails().getBalance();
+        log.info("Balance: {}", accountBalance);
+        return isWorkTime() && (accountBalance > balanceLimit);
     }
 
     private void trailingPositions() {

@@ -21,9 +21,10 @@ import org.springframework.stereotype.Component;
 @Component("PredicatorActor")
 public class PredicatorActor extends UntypedAbstractActor {
 
-
     private final Instrument instrument;
     private final Step step;
+
+    private Double lastPredict = 0D;
 
     @Autowired
     private CandleRepository candleRepository;
@@ -49,8 +50,11 @@ public class PredicatorActor extends UntypedAbstractActor {
             MultiLayerNetwork net = ModelSerializer.restoreMultiLayerNetwork(learnModel.getModel(), true);
             double closePrice = net.rnnTimeStep(input).getDouble(0) * (learnModel.getCloseMax() - learnModel.getCloseMin()) + learnModel.getCloseMin();
 
-            Messages.Predict predict = new Messages.Predict(closePrice);
-            getContext().actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name()).tell(predict, sender());
+            if (closePrice != lastPredict) {
+                lastPredict = closePrice;
+                Messages.Predict predict = new Messages.Predict(closePrice);
+                getContext().actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name()).tell(predict, sender());
+            }
         }
     }
 }
