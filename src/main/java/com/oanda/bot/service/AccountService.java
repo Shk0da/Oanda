@@ -217,7 +217,7 @@ public class AccountService {
     }
 
     public void closeOrdersAndTrades(Instrument instrument) {
-        HttpEntity<Object> entity = new HttpEntity<>(headers());
+        HttpEntity<Object> entity = headers();
 
         Order.Orders orders = getOrders(instrument);
         orders.getOrders().forEach(order ->
@@ -225,7 +225,7 @@ public class AccountService {
 
         Trade.Trades trades = getTrades(instrument);
         trades.getTrades().forEach(trade ->
-                getResponse(tradesUrl() + "/" + trade.getId() + "/close", HttpMethod.PUT, entity, Trade.class));
+                getResponse(tradesUrl() + "/" + trade.getId() + "/close", HttpMethod.PUT, entity, Map.class));
     }
 
     //util
@@ -273,24 +273,20 @@ public class AccountService {
             if (HttpMethod.POST.equals(method) || HttpMethod.PATCH.equals(method)) {
                 tmpl.getMessageConverters().add(new FormMapHttpMessageConverter());
                 response = tmpl.postForObject(url, entity, responseType);
-            /*} else if (HttpMethod.PUT.equals(method)) { TODO check this
+            } else if (HttpMethod.PUT.equals(method)) {
                 tmpl.getMessageConverters().add(new FormMapHttpMessageConverter());
-                tmpl.put(url, entity);
-                ResponseEntity<T> resp = tmpl.exchange(url, HttpMethod.PUT, entity, responseType);
-                if (resp.getStatusCode() != HttpStatus.BAD_REQUEST && resp.hasBody()) {
-                    response = resp.getBody();
-                }*/
+                response = tmpl.exchange(url, HttpMethod.PUT, entity, responseType).getBody();
             } else {
                 ResponseEntity<T> resp = tmpl.exchange(url, method, entity, responseType);
                 if (resp.getStatusCode() == HttpStatus.OK && resp.hasBody()) {
                     response = resp.getBody();
                 }
             }
-        } catch (HttpStatusCodeException e) {
-            log.error("Could not get response from " + url);
-            log.error(e.getResponseBodyAsString());
-        } catch (RestClientException e) {
-            log.error("Could not get response from " + url, e);
+        } catch (HttpStatusCodeException ex) {
+            log.error("Could not {} response from {}. {}", method, url, ex.getMessage());
+            log.error(ex.getResponseBodyAsString());
+        } catch (RestClientException ex) {
+            log.error("Could not {} response from {} . {}", method, url, ex.getMessage());
         }
 
         return Optional.ofNullable(response);
