@@ -9,7 +9,7 @@ import java.io.File;
  * Сообщения взаимодействия между акторами
  */
 public enum Messages {
-    WORK, SAVE_STATE;
+    WORK;
 
     @Data
     @AllArgsConstructor

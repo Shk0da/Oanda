@@ -9,9 +9,9 @@ import org.joda.time.DateTimeZone;
 import java.io.IOException;
 
 public class StringDateTimeDeserializer extends JsonDeserializer<DateTime> {
+
     @Override
-    public DateTime deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)
-            throws IOException {
+    public DateTime deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext) {
         try {
             String date = jsonparser.getText();
             return new DateTime(date, DateTimeZone.getDefault());
