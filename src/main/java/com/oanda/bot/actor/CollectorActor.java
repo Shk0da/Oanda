@@ -1,6 +1,7 @@
 package com.oanda.bot.actor;
 
 import akka.actor.UntypedAbstractActor;
+import com.google.common.collect.Lists;
 import com.oanda.bot.config.ActorConfig;
 import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
@@ -40,7 +41,21 @@ public class CollectorActor extends UntypedAbstractActor {
     @Override
     public void onReceive(Object message) {
         if (Messages.WORK.equals(message)) {
-            List<Candle> candles = accountService.getCandles(instrument, step, getLastCollect()).getCandles();
+
+            List<Candle> candles = Lists.newArrayList();
+            if (getLastCollect().isAfter(DateTime.now(DateTimeZone.getDefault()).minusDays(30))) {
+                for(int i = 10; i > 0; i--) {
+                    candles.addAll(accountService.getCandles(
+                            instrument,
+                            step,
+                            DateTime.now(DateTimeZone.getDefault()).minusDays(i),
+                            DateTime.now(DateTimeZone.getDefault()).minusDays(i-1)
+                    ).getCandles());
+                }
+            } else {
+                candles.addAll(accountService.getCandles(instrument, step, getLastCollect()).getCandles());
+            }
+
             candles = candles.stream().filter(Objects::nonNull).collect(Collectors.toList());
 
             if (!candles.isEmpty()) {

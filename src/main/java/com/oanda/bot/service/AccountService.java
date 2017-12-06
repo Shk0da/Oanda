@@ -115,6 +115,10 @@ public class AccountService {
         return getCandles(step, start, end, instrument, false);
     }
 
+    public Candle.Candles getCandles(Instrument instrument, Step step, DateTime start, DateTime end) {
+        return getCandles(step, start, end, instrument, false);
+    }
+
     public Candle.Candles getCandles(Step step, DateTime start, DateTime end, Instrument instrument) {
         return getCandles(step, start, end, instrument, false);
     }

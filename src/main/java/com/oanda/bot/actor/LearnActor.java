@@ -3,6 +3,8 @@ package com.oanda.bot.actor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedAbstractActor;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
 import com.oanda.bot.domain.Step;
@@ -13,10 +15,17 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Precision;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.primitives.Pair;
+import org.neuroph.core.NeuralNetwork;
+import org.neuroph.core.data.DataSet;
+import org.neuroph.core.data.DataSetRow;
+import org.neuroph.core.learning.SupervisedLearning;
+import org.neuroph.nnet.MultiLayerPerceptron;
+import org.neuroph.nnet.learning.BackPropagation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -24,6 +33,11 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static com.oanda.bot.util.learning.StockDataSetIterator.deNormalize;
+import static com.oanda.bot.util.learning.StockDataSetIterator.normalize;
 
 @Slf4j
 @Scope("prototype")
@@ -110,9 +124,9 @@ public class LearnActor extends UntypedAbstractActor {
 
         int batchSize = 64; // mini-batch size
         double splitRatio = log.isDebugEnabled()
-                ? 0.9  // 90% for training, 10% for testing
-                : 1;
-        int epochs = 100; // training epochs
+                ? 0.95  // 95% for training, 10% for testing
+                : 0.95; //todo!
+        int epochs = 500; // training epochs
         StockDataSetIterator iterator = new StockDataSetIterator(candles, batchSize, splitRatio);
         MultiLayerNetwork net = LSTMNetwork.buildLstmNetworks(iterator.inputColumns(), iterator.totalOutcomes());
         for (int epoch = 0; epoch < epochs; epoch++) {
@@ -122,7 +136,6 @@ public class LearnActor extends UntypedAbstractActor {
             }
             // reset iterator
             iterator.reset();
-            // clear current stance from the last example
             net.rnnClearPreviousState();
         }
 
@@ -131,46 +144,123 @@ public class LearnActor extends UntypedAbstractActor {
             model = File.createTempFile(rnnName, ".rnn");
             ModelSerializer.writeModel(net, model, true);
             model.deleteOnExit();
+            openMin = iterator.getOpenMin();
+            openMax = iterator.getOpenMax();
+            lowMin = iterator.getLowMin();
+            lowMax = iterator.getLowMax();
+            highMin = iterator.getHighMin();
+            highMax = iterator.getHighMax();
+            closeMin = iterator.getCloseMin();
+            closeMax = iterator.getCloseMax();
+            volumeMin = iterator.getVolumeMin();
+            volumeMax = iterator.getVolumeMax();
         } catch (IOException ex) {
             log.error(ex.getMessage());
         }
 
+
+
+//        Map<Double, Double> a2p = Maps.newLinkedHashMap();
+//        NeuralNetwork<BackPropagation> neuralNetwork = getBackPropagationNeuralNetwork(iterator.getTrain());
+//        int split = (int) Math.round(candles.size() * splitRatio);
+//        List<Candle> train = candles.subList(0, split);
+//        for (Candle candle : candles.subList(split, candles.size())) {
+//            neuralNetwork.calculate();
+//            double[] nnResult = neuralNetwork.getOutput();
+//            double predict = deNormalize(nnResult[0], iterator.getCloseMin(), iterator.getCloseMax());
+//
+//            a2p.put(
+//                    Precision.round(candle.getCloseMid(), 5),
+//                    Precision.round(predict, 5)
+//            );
+//
+//            DataSet trainingSet = new DataSet(5, 1);
+//            trainingSet.addRow(new DataSetRow(
+//                            new double[] {
+//                                    normalize(train.get(train.size()-4).getCloseMid(), closeMin, closeMax),
+//                                    normalize(train.get(train.size()-3).getCloseMid(), closeMin, closeMax),
+//                                    normalize(train.get(train.size()-2).getCloseMid(), closeMin, closeMax),
+//                                    normalize(train.get(train.size()-1).getCloseMid(), closeMin, closeMax),
+//                                    normalize(candle.getCloseMid(), closeMin, closeMax)
+//                            },
+//                            new double[] {normalize(candle.getCloseMid(), closeMin, closeMax)}
+//                    )
+//            );
+//            neuralNetwork.learn(trainingSet);
+//            train.add(candle);
+//        }
+//
+//        System.out.println(a2p);
+
+
         if (log.isDebugEnabled()) {
             log.debug("Testing...");
-            List<Pair<INDArray, Double>> test = iterator.getTestDataSet();
-            double max = iterator.getMaxNum()[1];
-            double min = iterator.getMinNum()[1];
-            double[] predicts = new double[test.size()];
-            double[] actuals = new double[test.size()];
-            for (int i = 0; i < test.size(); i++) {
-                predicts[i] = net.rnnTimeStep(test.get(i).getKey()).getDouble(candles.size() - 1) * (max - min) + min;
-                actuals[i] = test.get(i).getValue();
+            List<Pair<INDArray, Double>> testDataSet = iterator.getTest();
+            Map<Double, Double> actualToPredict = Maps.newLinkedHashMap();
+            int steps = testDataSet.size() - 1;
+            for (int i = 0; i < steps; i++) {
+                INDArray input = testDataSet.get(i).getKey();
+                INDArray output = net.rnnTimeStep(input);
+                double predict = deNormalize(output.getDouble(0), iterator.getCloseMin(), iterator.getCloseMax());
+                double actual = deNormalize(testDataSet.get(i + 1).getValue(), iterator.getCloseMin(), iterator.getCloseMax());
+                actualToPredict.put(
+                        Precision.round(actual, 5),
+                        Precision.round(predict, 5)
+                );
             }
 
-            // print out
-            log.debug("Predict, Actual");
-            for (int i = 0; i < predicts.length; i++) {
-                log.debug(predicts[i] + ", " + actuals[i]);
+            log.debug(actualToPredict.toString());
+            log.debug("...end");
+        }
+
+        setStatus(Status.READY);
+    }
+
+    private NeuralNetwork<BackPropagation> getBackPropagationNeuralNetwork(final List<Candle> train) {
+        NeuralNetwork<BackPropagation> neuralNetwork = new MultiLayerPerceptron(5, 11, 1);
+        int maxIterations = 1000;
+        double learningRate = 0.5;
+        double maxError = 0.00001;
+        SupervisedLearning learningRule = neuralNetwork.getLearningRule();
+        learningRule.setMaxError(maxError);
+        learningRule.setLearningRate(learningRate);
+        learningRule.setMaxIterations(maxIterations);
+
+        DataSet trainingSet = new DataSet(5, 1);
+        int lineSize = 5;
+        int linesSize = train.size() / lineSize;
+        Double[][] tickLines = new Double[linesSize + 1][lineSize];
+        int x = 0;
+        int y = 0;
+        for (Candle tick : train) {
+            tickLines[x][y++] = normalize(tick.getCloseMid(), closeMin, closeMax);
+            if (y >= 5) {
+                x++;
+                y = 0;
             }
         }
 
-        candles.forEach(candle -> {
-            openMin = (candle.getOpenMid() < openMin) ? candle.getOpenMid() : openMin;
-            openMax = (candle.getOpenMid() > openMax) ? candle.getOpenMid() : openMax;
+        for (int i = 0; i <= linesSize; i++) {
+            Double[] tokens = tickLines[i];
+            Double[] trainValues = new Double[5];
+            int expect = 0;
+            double tmp = 0D;
+            for (int j = 0; j < 5; j++) {
+                if (tokens[j] == null) {
+                    trainValues[j] = tmp;
+                } else {
+                    trainValues[j] = tokens[j];
+                    expect = j;
+                    tmp = trainValues[j];
+                }
+            }
+            double[] set = Stream.of(trainValues).mapToDouble(Double::doubleValue).toArray();
+            if (tokens[expect] == null) continue;
+            double[] expected = new double[]{tokens[expect]};
+            trainingSet.addRow(new DataSetRow(set, expected));
+        }
 
-            lowMin = (candle.getLowMid() < lowMin) ? candle.getLowMid() : lowMin;
-            lowMax = (candle.getLowMid() > lowMax) ? candle.getLowMid() : lowMax;
-
-            highMin = (candle.getHighMid() < highMin) ? candle.getHighMid() : highMin;
-            highMax = (candle.getHighMid() > highMax) ? candle.getHighMid() : highMax;
-
-            closeMin = (candle.getCloseMid() < closeMin) ? candle.getCloseMid() : closeMin;
-            closeMax = (candle.getCloseMid() > closeMax) ? candle.getCloseMid() : closeMax;
-
-            volumeMin = (candle.getVolume() < volumeMin) ? candle.getVolume() : volumeMin;
-            volumeMax = (candle.getVolume() > volumeMax) ? candle.getVolume() : volumeMax;
-        });
-
-        setStatus(Status.READY);
+        neuralNetwork.learn(trainingSet);
+        return neuralNetwork;
     }
 }

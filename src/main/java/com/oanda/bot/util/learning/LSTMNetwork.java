@@ -1,7 +1,7 @@
 package com.oanda.bot.util.learning;
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.BackpropType;
+import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
@@ -12,7 +12,6 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.learning.config.RmsProp;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 
@@ -30,12 +29,13 @@ public class LSTMNetwork {
     public static MultiLayerNetwork buildLstmNetworks(int nIn, int nOut) {
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(seed)
-                .iterations(iterations)
-                .learningRate(learningRate)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .iterations(iterations)
                 .weightInit(WeightInit.XAVIER)
-                .updater(Updater.RMSPROP)
-                .updater(new RmsProp(1 - learningRate))
+                .updater(Updater.ADAM)
+                .learningRate(learningRate)
+                .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                .gradientNormalizationThreshold(0.5)
                 .regularization(true)
                 .l2(1e-4)
                 .list()
@@ -64,9 +64,6 @@ public class LSTMNetwork {
                         .activation(Activation.IDENTITY)
                         .lossFunction(LossFunctions.LossFunction.MSE)
                         .build())
-                .backpropType(BackpropType.TruncatedBPTT) // trivial here, foreward and backward length are same as exampleLength
-                .tBPTTForwardLength(22)
-                .tBPTTBackwardLength(22)
                 .pretrain(false)
                 .backprop(true)
                 .build();

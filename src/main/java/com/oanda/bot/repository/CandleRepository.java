@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
 import com.oanda.bot.domain.Step;
+import lombok.Getter;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
@@ -59,6 +60,10 @@ public class CandleRepository {
     public Candle getLastCandle(Instrument instrument, Step step) {
         List<Candle> current = getCandles(getKey(instrument, step));
         return current.isEmpty() ? null : current.get(current.size() - 1);
+    }
+
+    public Integer getSize(Instrument instrument, Step step){
+        return getCandles(getKey(instrument, step)).size();
     }
 
     private String getKey(Instrument instrument, Step step) {

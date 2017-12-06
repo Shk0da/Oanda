@@ -6,7 +6,6 @@ import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
 import com.oanda.bot.domain.Step;
 import com.oanda.bot.repository.CandleRepository;
-import com.oanda.bot.util.learning.StockDataSetIterator;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
@@ -15,6 +14,8 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import static com.oanda.bot.util.learning.StockDataSetIterator.*;
 
 @Slf4j
 @Scope("prototype")
@@ -40,15 +41,15 @@ public class PredicatorActor extends UntypedAbstractActor {
             Messages.LearnModel learnModel = (Messages.LearnModel) message;
 
             Candle lastCandle = candleRepository.getLastCandle(instrument, step);
-            INDArray input = Nd4j.create(new int[]{1, StockDataSetIterator.VECTOR_SIZE}, 'f');
-            input.putScalar(new int[]{0, 0}, (lastCandle.getOpenMid() - learnModel.getOpenMin()) / (learnModel.getOpenMax() - learnModel.getOpenMin()));
-            input.putScalar(new int[]{0, 1}, (lastCandle.getCloseMid() - learnModel.getCloseMin()) / (learnModel.getCloseMax() - learnModel.getCloseMin()));
-            input.putScalar(new int[]{0, 2}, (lastCandle.getLowMid() - learnModel.getLowMin()) / (learnModel.getLowMax() - learnModel.getLowMin()));
-            input.putScalar(new int[]{0, 3}, (lastCandle.getHighMid() - learnModel.getHighMin()) / (learnModel.getHighMax() - learnModel.getHighMin()));
-            input.putScalar(new int[]{0, 4}, (lastCandle.getVolume() - learnModel.getVolumeMin()) / (learnModel.getVolumeMax() - learnModel.getVolumeMin()));
+            INDArray input = Nd4j.create(new int[]{1, VECTOR_SIZE}, 'f');
+            input.putScalar(new int[]{0, 0}, normalize(lastCandle.getOpenMid(), learnModel.getOpenMin(), learnModel.getOpenMax()));
+            input.putScalar(new int[]{0, 1}, normalize(lastCandle.getCloseMid(), learnModel.getCloseMin(), learnModel.getCloseMax()));
+            input.putScalar(new int[]{0, 2}, normalize(lastCandle.getLowMid(), learnModel.getLowMin(), learnModel.getLowMax()));
+            input.putScalar(new int[]{0, 3}, normalize(lastCandle.getHighMid(), learnModel.getHighMin(), learnModel.getHighMax()));
+            input.putScalar(new int[]{0, 4}, normalize(lastCandle.getVolume(), learnModel.getVolumeMin(), learnModel.getVolumeMax()));
 
             MultiLayerNetwork net = ModelSerializer.restoreMultiLayerNetwork(learnModel.getModel(), true);
-            double closePrice = net.rnnTimeStep(input).getDouble(0) * (learnModel.getCloseMax() - learnModel.getCloseMin()) + learnModel.getCloseMin();
+            double closePrice = deNormalize(net.rnnTimeStep(input).getDouble(0), learnModel.getCloseMin(), learnModel.getCloseMax());
 
             if (closePrice != lastPredict) {
                 lastPredict = closePrice;
