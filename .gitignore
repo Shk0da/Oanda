@@ -3,6 +3,7 @@ build/
 logs/
 target/
 !.mvn/wrapper/maven-wrapper.jar
+!.gradle/wrapper/gradle-wrapper.jar
 *.war
 *.jar
 *.nnet

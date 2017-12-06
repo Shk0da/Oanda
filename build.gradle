@@ -1,12 +1,9 @@
-/**
- * Oanda trading Bot V2
- */
-
 description 'Oanda trading Bot'
 
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'build-dashboard'
 
 jar {
     baseName = 'oanda'
