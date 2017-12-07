@@ -63,9 +63,6 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.balance.risk}")
     private Double balanceRisk;
 
-    @Value("${oandabot.globalbasket}")
-    private Boolean globalBasket;
-
     @Value("${oandabot.trailingstop.enable}")
     private Boolean trailingStopEnable;
 
@@ -144,15 +141,8 @@ public class TradeActor extends UntypedAbstractActor {
             boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0) || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
 
             if (profit > satisfactorilyTP || trendChanged && profit >= 0) {
-                if (globalBasket) {
-                    instrumentRepository.getAllInstruments().forEach(
-                            instr -> accountService.closeOrdersAndTrades(instr)
-                    );
-                } else {
-                    accountService.closeOrdersAndTrades(instrument);
-                    log.info("{}: Close orders and trades", instrument.getDisplayName());
-                }
-
+                accountService.closeOrdersAndTrades(instrument);
+                log.info("{}: Close orders and trades", instrument.getDisplayName());
                 order = new Order();
             }
         }
@@ -233,11 +223,7 @@ public class TradeActor extends UntypedAbstractActor {
         double profit = 0;
         Trade.Trades trades = accountService.getTrades(instrument);
         for (Trade trade : trades.getTrades()) {
-            if (globalBasket) {
-                profit += trade.getUnrealizedPL();
-            } else if (trade.getInstrument().equals(instrument.getInstrument())) {
-                profit += trade.getUnrealizedPL();
-            }
+            profit += trade.getUnrealizedPL();
         }
 
         log.info("Profit {}: {}", instrument.getDisplayName(), profit);
