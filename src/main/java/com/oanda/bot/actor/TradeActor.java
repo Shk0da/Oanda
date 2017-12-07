@@ -134,7 +134,7 @@ public class TradeActor extends UntypedAbstractActor {
         Price price = accountService.getPrice(instrument);
 
         Order order = getCurrentOrder();
-        if (order == null || order.getId() != null) {
+        if (order.getId() != null) {
             double profit = getProfit();
             double satisfactorilyTP = ((price.getBid() + price.getAsk()) / 2 - takeProfit) * instrument.getPip();
             boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0) || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
@@ -204,10 +204,11 @@ public class TradeActor extends UntypedAbstractActor {
     private Order getCurrentOrder() {
         if (currentOrder == null) {
             Trade.Trades trades = accountService.getTrades(instrument);
-            if (trades.getTrades().isEmpty()) return null;
+            if (trades.getTrades().isEmpty()) return new Order();
 
             Trade lastTrade = Iterables.getLast(trades.getTrades());
             Order orderFromTrade = new Order();
+            orderFromTrade.setId(lastTrade.getId());
             orderFromTrade.setInstrument(lastTrade.getInstrument());
             orderFromTrade.setPrice(lastTrade.getPrice());
             orderFromTrade.setUnits(lastTrade.getCurrentUnits());
@@ -301,7 +302,7 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private void trailingPositions() {
-        if (currentRate == null || getCurrentOrder() == null) return;
+        if (currentRate == null || getCurrentOrder().getId() == null) return;
 
         Order.Orders orders = accountService.getOrders(instrument);
         orders.getOrders().forEach(order -> {
