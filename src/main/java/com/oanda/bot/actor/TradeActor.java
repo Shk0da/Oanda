@@ -152,7 +152,12 @@ public class TradeActor extends UntypedAbstractActor {
 
         List<Trade> trades = getTrades();
         if (!trades.isEmpty()) {
-            log.info("We have active trades: {}. Waiting...", trades.size());
+            log.info("We have {} {} active trades:", trades.size(), instrument.getDisplayName());
+            trades.forEach(trade ->
+                    log.info("Trade {}: [price: {}, units(c): {}, units(i): {}]",
+                            trade.getId(), trade.getPrice(), trade.getCurrentUnits(), trade.getInitialUnits())
+            );
+            log.info("Waiting...");
             return;
         }
 
