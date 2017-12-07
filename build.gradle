@@ -24,11 +24,6 @@ dependencies {
     compile("joda-time:joda-time")
     compile("com.google.guava:guava:23.0")
     compile("com.typesafe.akka:akka-actor_2.11:2.5.7")
-
-    compile("org.nd4j:nd4j-api:0.9.1")
-    compile("org.nd4j:nd4j-native:0.9.1:windows-x86_64")
-    compile("org.nd4j:nd4j-native-platform:0.9.1")
-    compile("org.deeplearning4j:deeplearning4j-core:0.9.1")
     compile("org.beykery:neuroph:2.92")
 
     compileOnly("org.projectlombok:lombok")
