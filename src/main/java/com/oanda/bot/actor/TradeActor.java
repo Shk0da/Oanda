@@ -139,6 +139,10 @@ public class TradeActor extends UntypedAbstractActor {
             double satisfactorilyTP = ((price.getBid() + price.getAsk()) / 2 - takeProfit) * instrument.getPip();
             boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0) || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
 
+            if (trendChanged) {
+                log.info("The trend has changed: {} -> {}", Signal.UP.equals(signal) ? Signal.DOWN : Signal.UP, signal);
+            }
+
             if (profit > satisfactorilyTP || trendChanged && profit >= 0) {
                 accountService.closeOrdersAndTrades(instrument);
                 log.info("{}: Close orders and trades", instrument.getDisplayName());
