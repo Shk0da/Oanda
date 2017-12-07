@@ -45,7 +45,6 @@ public class TradeActor extends UntypedAbstractActor {
     private Candle currentRate;
 
     @Setter
-    @Getter
     private Order currentOrder;
 
     @Value("${oandabot.takeprofit}")
@@ -135,7 +134,7 @@ public class TradeActor extends UntypedAbstractActor {
         Price price = accountService.getPrice(instrument);
 
         Order order = getCurrentOrder();
-        if (order.getId() != null) {
+        if (order == null || order.getId() != null) {
             double profit = getProfit();
             double satisfactorilyTP = ((price.getBid() + price.getAsk()) / 2 - takeProfit) * instrument.getPip();
             boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0) || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
@@ -203,8 +202,19 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private Order getCurrentOrder() {
-        List<Order> orders = accountService.getOrders(instrument).getOrders();
-        return orders.isEmpty() ? new Order() : orders.iterator().next();
+        if (currentOrder == null) {
+            Trade.Trades trades = accountService.getTrades(instrument);
+            if (trades.getTrades().isEmpty()) return null;
+
+            Trade lastTrade = Iterables.getLast(trades.getTrades());
+            Order orderFromTrade = new Order();
+            orderFromTrade.setInstrument(lastTrade.getInstrument());
+            orderFromTrade.setPrice(lastTrade.getPrice());
+            orderFromTrade.setUnits(lastTrade.getCurrentUnits());
+            currentOrder = orderFromTrade;
+        }
+
+        return currentOrder;
     }
 
     private List<Trade> getTrades() {
@@ -291,19 +301,7 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private void trailingPositions() {
-        if (currentRate == null) return;
-
-        if (currentOrder == null) {
-            Trade.Trades trades = accountService.getTrades(instrument);
-            if (trades.getTrades().isEmpty()) return;
-
-            Trade lastTrade = Iterables.getLast(trades.getTrades());
-            Order orderFromTrade = new Order();
-            orderFromTrade.setInstrument(lastTrade.getInstrument());
-            orderFromTrade.setPrice(lastTrade.getPrice());
-            orderFromTrade.setUnits(lastTrade.getCurrentUnits());
-            currentOrder = orderFromTrade;
-        }
+        if (currentRate == null || getCurrentOrder() == null) return;
 
         Order.Orders orders = accountService.getOrders(instrument);
         orders.getOrders().forEach(order -> {
