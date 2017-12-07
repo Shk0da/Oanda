@@ -17,7 +17,7 @@ public class Scheduler {
     @Autowired
     private ActorSystem actorSystem;
 
-    @Scheduled(cron = "${oandabot.scheduler.trade-check.cron}")
+    @Scheduled(cron = "${oandabot.scheduler.candle-collect.cron}")
     public void fireTrade() {
         if (actorSystem == null) return;
 

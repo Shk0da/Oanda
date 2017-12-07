@@ -86,6 +86,7 @@ public class LearnActor extends UntypedAbstractActor {
 
     private NeuralNetwork<BackPropagation> getBackPropagationNeuralNetwork(final List<Candle> candles) {
         int vector = 14;
+        int shiftVector = 5;
         int maxIterations = 10000;
         double learningRate = 0.45;
         double maxError = 0.00001;
@@ -117,7 +118,7 @@ public class LearnActor extends UntypedAbstractActor {
         double splitRatio = (log.isDebugEnabled()) ? 0.8 : 1;
         int split = (int) Math.round(candles.size() * splitRatio);
         List<Candle> train = candles.subList(0, split);
-        DataSet trainingSet = getDataSet(train, vector);
+        DataSet trainingSet = getDataSet(train, vector, shiftVector);
         neuralNetwork.learn(trainingSet);
 
         if (log.isDebugEnabled()) {
@@ -125,13 +126,13 @@ public class LearnActor extends UntypedAbstractActor {
 
             Map<String, String> actualToPredict = Maps.newLinkedHashMap();
             List<Candle> test = candles.subList(split, candles.size());
-            for (int i = 0; i < test.size() - vector; i = i + vector) {
+            for (int i = 0; i < test.size() - vector - shiftVector; i = i + vector) {
                 neuralNetwork.calculate();
                 double[] nnResult = neuralNetwork.getOutput();
                 double predict = deNormalize(nnResult[0], closeMin, closeMax);
 
                 actualToPredict.put(
-                        String.format("%.5f", test.get(i).getCloseMid()),
+                        String.format("%.5f", test.get(i + shiftVector).getCloseMid()),
                         String.format("%.5f", predict)
                 );
 
@@ -140,7 +141,7 @@ public class LearnActor extends UntypedAbstractActor {
                     set[j] = normalize(test.get(i + j).getCloseMid(), closeMin, closeMax);
                 }
                 double[] expected = new double[]{
-                        normalize(test.get(i + vector).getCloseMid(), closeMin, closeMax)
+                        normalize(test.get(i + vector + shiftVector).getCloseMid(), closeMin, closeMax)
                 };
                 trainingSet.addRow(new DataSetRow(set, expected));
 
@@ -154,15 +155,15 @@ public class LearnActor extends UntypedAbstractActor {
         return neuralNetwork;
     }
 
-    private DataSet getDataSet(List<Candle> train, int vector) {
+    private DataSet getDataSet(List<Candle> train, int vector, int shiftVector) {
         DataSet trainingSet = new DataSet(vector, 1);
-        for (int i = 0; i < train.size() - vector; i = i + vector) {
+        for (int i = 0; i < train.size() - vector - shiftVector; i = i + vector) {
             double[] set = new double[vector];
             for (int j = 0; j < vector; j++) {
                 set[j] = normalize(train.get(i + j).getCloseMid(), closeMin, closeMax);
             }
             double[] expected = new double[]{
-                    normalize(train.get(i + vector).getCloseMid(), closeMin, closeMax)
+                    normalize(train.get(i + vector + shiftVector).getCloseMid(), closeMin, closeMax)
             };
             trainingSet.addRow(new DataSetRow(set, expected));
         }

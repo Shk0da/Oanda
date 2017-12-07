@@ -1,7 +1,7 @@
 package com.oanda.bot.actor;
 
 import akka.actor.UntypedAbstractActor;
-import com.oanda.bot.config.ActorConfig;
+import com.google.common.collect.Iterables;
 import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
 import com.oanda.bot.domain.Step;
@@ -27,7 +27,6 @@ public class CollectorActor extends UntypedAbstractActor {
     private final Step step;
 
 
-
     @Autowired
     private AccountService accountService;
 
@@ -41,20 +40,21 @@ public class CollectorActor extends UntypedAbstractActor {
 
     @Override
     public void onReceive(Object message) {
-        if (Messages.WORK.equals(message)) {
+        if (message instanceof Messages.WorkTime) {
+            context().parent().forward(message, context());
+        }
 
-            List<Candle> candles = accountService.getCandles(instrument, step, getLastCollect()).getCandles();
-            candles = candles.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (Messages.WORK.equals(message)) {
+            List<Candle> candles = accountService.getCandles(instrument, step, getLastCollect())
+                    .getCandles()
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
             if (!candles.isEmpty()) {
                 log.info("Candle list size: {}", candles.size());
                 candleRepository.addCandles(instrument, step, candles);
-
-                Candle lastCandle = candles.get(candles.size() - 1);
-                if (lastCandle != null) {
-                    getContext().actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
-                            .tell(lastCandle, sender());
-                }
+                getContext().getParent().tell(Iterables.getLast(candles), sender());
             }
         }
     }
@@ -62,7 +62,7 @@ public class CollectorActor extends UntypedAbstractActor {
     private DateTime getLastCollect() {
         Candle lastCandle = candleRepository.getLastCandle(instrument, step);
         return lastCandle == null
-                ? DateTime.now(DateTimeZone.getDefault()).minusDays(1)
+                ? DateTime.now(DateTimeZone.getDefault()).minusDays(2)
                 : lastCandle.getTime();
     }
 }

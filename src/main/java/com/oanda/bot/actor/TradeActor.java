@@ -88,7 +88,7 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     @Override
-    public void preStart() throws Exception {
+    public void preStart() {
         collectorActor = getContext().actorOf(
                 Props.create(SpringDIActor.class, CollectorActor.class, instrument, step), "CollectorActor_" + instrument.getInstrument() + "_" + step.name()
         );
@@ -100,7 +100,7 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     @Override
-    public void onReceive(Object message) throws Exception {
+    public void onReceive(Object message) {
         if (message instanceof Messages.WorkTime) {
             setWorkTime(((Messages.WorkTime) message).is);
             log.info("Now workTime is {}", isWorkTime());
@@ -112,17 +112,13 @@ public class TradeActor extends UntypedAbstractActor {
             setCurrentRate(((Candle) message));
             log.info("CurrentRate: {}", getCurrentRate());
             learnActor.tell(message, self());
+            trailingPositions();
         }
 
         if (message instanceof Messages.Predict) {
             log.info("Current {}: {}", instrument.getDisplayName(), getCurrentRate().getMid().getC());
             log.info("Predict {}: {}", instrument.getDisplayName(), ((Messages.Predict) message).getPrice());
             trade((Messages.Predict) message);
-        }
-
-        if (Messages.WORK.equals(message)) {
-            collectorActor.tell(Messages.WORK, self());
-            trailingPositions();
         }
 
         unhandled(message);
