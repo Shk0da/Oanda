@@ -31,6 +31,7 @@ public class LearnActor extends UntypedAbstractActor {
     private final Step step;
 
     private volatile Double lastPredict = 0D;
+    private int vector = 14;
 
     @Autowired
     private CandleRepository candleRepository;
@@ -72,9 +73,15 @@ public class LearnActor extends UntypedAbstractActor {
                 log.info("Stop training {} {}", instrument.getDisplayName(), step.name());
                 setStatus(Status.READY);
 
+                List<Candle> last = candleRepository.getLastCandles(instrument, step, vector);
+                double[] set = new double[vector];
+                for (int j = 0; j < vector; j++) {
+                    set[j] = normalize(last.get(j).getCloseMid(), closeMin, closeMax);
+                }
+                neuralNetwork.setInput(set);
+
                 neuralNetwork.calculate();
-                double[] networkOutput = neuralNetwork.getOutput();
-                double closePrice = deNormalize(networkOutput[0], closeMin, closeMax);
+                double closePrice = deNormalize(neuralNetwork.getOutput()[0], closeMin, closeMax);
 
                 if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
                     lastPredict = closePrice;
@@ -85,7 +92,6 @@ public class LearnActor extends UntypedAbstractActor {
     }
 
     private NeuralNetwork<BackPropagation> getBackPropagationNeuralNetwork(final List<Candle> candles) {
-        int vector = 14;
         int shiftVector = 5;
         int maxIterations = 10000;
         double learningRate = 0.45;
@@ -127,25 +133,18 @@ public class LearnActor extends UntypedAbstractActor {
             Map<String, String> actualToPredict = Maps.newLinkedHashMap();
             List<Candle> test = candles.subList(split, candles.size());
             for (int i = 0; i < test.size() - vector - shiftVector; i = i + vector) {
+                double[] set = new double[vector];
+                for (int j = 0; j < vector; j++) {
+                    set[j] = normalize(test.get(i + j).getCloseMid(), closeMin, closeMax);
+                }
+                neuralNetwork.setInput(set);
                 neuralNetwork.calculate();
-                double[] nnResult = neuralNetwork.getOutput();
-                double predict = deNormalize(nnResult[0], closeMin, closeMax);
+                double predict = deNormalize(neuralNetwork.getOutput()[0], closeMin, closeMax);
 
                 actualToPredict.put(
                         String.format("%.5f", test.get(i + shiftVector).getCloseMid()),
                         String.format("%.5f", predict)
                 );
-
-                double[] set = new double[vector];
-                for (int j = 0; j < vector; j++) {
-                    set[j] = normalize(test.get(i + j).getCloseMid(), closeMin, closeMax);
-                }
-                double[] expected = new double[]{
-                        normalize(test.get(i + vector + shiftVector).getCloseMid(), closeMin, closeMax)
-                };
-                trainingSet.addRow(new DataSetRow(set, expected));
-
-                neuralNetwork.learn(trainingSet);
             }
 
             log.debug(actualToPredict.toString());
