@@ -6,7 +6,6 @@ import akka.actor.UntypedAbstractActor;
 import com.google.common.collect.Iterables;
 import com.oanda.bot.domain.*;
 import com.oanda.bot.repository.CandleRepository;
-import com.oanda.bot.repository.InstrumentRepository;
 import com.oanda.bot.service.AccountService;
 import com.oanda.bot.util.DateTimeUtil;
 import lombok.Getter;
@@ -34,7 +33,6 @@ public class TradeActor extends UntypedAbstractActor {
     protected final Step step;
 
     private ActorRef learnActor;
-    private ActorRef collectorActor;
 
     @Setter
     @Getter
@@ -78,9 +76,6 @@ public class TradeActor extends UntypedAbstractActor {
     private CandleRepository candleRepository;
 
     @Autowired
-    private InstrumentRepository instrumentRepository;
-
-    @Autowired
     private AccountService accountService;
 
     public TradeActor(Instrument instrument, Step step) {
@@ -90,7 +85,7 @@ public class TradeActor extends UntypedAbstractActor {
 
     @Override
     public void preStart() {
-        collectorActor = getContext().actorOf(
+        getContext().actorOf(
                 Props.create(SpringDIActor.class, CollectorActor.class, instrument, step), "CollectorActor_" + instrument.getInstrument() + "_" + step.name()
         );
         log.info("TradeActor make CollectorActor_" + instrument.getInstrument() + "_" + step.name());
