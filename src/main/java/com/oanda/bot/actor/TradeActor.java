@@ -1,9 +1,8 @@
 package com.oanda.bot.actor;
 
-import akka.actor.ActorRef;
-import akka.actor.Props;
 import akka.actor.UntypedAbstractActor;
 import com.google.common.collect.Iterables;
+import com.oanda.bot.config.ActorConfig;
 import com.oanda.bot.domain.*;
 import com.oanda.bot.repository.CandleRepository;
 import com.oanda.bot.service.AccountService;
@@ -32,8 +31,6 @@ public class TradeActor extends UntypedAbstractActor {
     protected final Instrument instrument;
     protected final Step step;
 
-    private ActorRef learnActor;
-
     @Setter
     @Getter
     private boolean workTime = true;
@@ -60,6 +57,9 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.balance.risk}")
     private Double balanceRisk;
 
+    @Value("${oandabot.lossorders.close}")
+    private Boolean lossOrdersClose;
+
     @Value("${oandabot.trailingstop.enable}")
     private Boolean trailingStopEnable;
 
@@ -84,31 +84,25 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     @Override
-    public void preStart() {
-        getContext().actorOf(
-                Props.create(SpringDIActor.class, CollectorActor.class, instrument, step), "CollectorActor_" + instrument.getInstrument() + "_" + step.name()
-        );
-        log.info("TradeActor make CollectorActor_" + instrument.getInstrument() + "_" + step.name());
-        learnActor = getContext().actorOf(
-                Props.create(SpringDIActor.class, LearnActor.class, instrument, step), "LearnActor_" + instrument.getInstrument() + "_" + step.name()
-        );
-        log.info("TradeActor make LearnActor_" + instrument.getInstrument() + "_" + step.name());
-    }
-
-    @Override
     public void onReceive(Object message) {
         if (message instanceof Messages.WorkTime) {
-            setWorkTime(((Messages.WorkTime) message).is);
+            setWorkTime(((Messages.WorkTime) message).getIs());
             log.info("Now workTime is {}", isWorkTime());
         }
 
         if (!isActive()) return;
 
+        if (Messages.WORK.equals(message)) {
+            checkProfit();
+            trailingPositions();
+        }
+
         if (message instanceof Candle) {
             setCurrentRate(((Candle) message));
             log.info("CurrentRate: {}", getCurrentRate());
-            learnActor.tell(message, self());
-            trailingPositions();
+            getContext()
+                    .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument.getInstrument() + "_" + step.name())
+                    .tell(message, self());
         }
 
         if (message instanceof Messages.Predict) {
@@ -120,28 +114,37 @@ public class TradeActor extends UntypedAbstractActor {
         unhandled(message);
     }
 
+    private void checkProfit() {
+        double profit = getProfit();
+        Price price = accountService.getPrice(instrument);
+        double satisfactorilyTP = ((price.getBid() + price.getAsk()) / 2) - (takeProfit * instrument.getPip());
+        if (profit > satisfactorilyTP) {
+            log.info("Profit {}: {}", instrument.getDisplayName(), profit);
+            accountService.closeOrdersAndTrades(instrument);
+            log.info("{}: Close orders and trades", instrument.getDisplayName());
+            log.info("Balance: {}", accountService.getAccountDetails().getBalance());
+        }
+    }
+
     private void trade(final Messages.Predict predict) {
         Signal signal = signal(predict);
         if (Signal.NONE.equals(signal)) return;
 
         log.info("We have new signal: {}", signal);
 
-        Price price = accountService.getPrice(instrument);
-
         Order order = getCurrentOrder();
         if (order.getId() != null) {
-            double profit = getProfit();
-            double satisfactorilyTP = ((price.getBid() + price.getAsk()) / 2 - takeProfit) * instrument.getPip();
             boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0) || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
-
             if (trendChanged) {
                 log.info("The trend has changed: {} -> {}", Signal.UP.equals(signal) ? Signal.DOWN : Signal.UP, signal);
-            }
-
-            if (profit > satisfactorilyTP || trendChanged && profit >= 0) {
-                accountService.closeOrdersAndTrades(instrument);
-                log.info("{}: Close orders and trades", instrument.getDisplayName());
-                order = new Order();
+                double profit = getProfit();
+                log.info("Profit {}: {}", instrument.getDisplayName(), profit);
+                log.info("The closure of unprofitable orders is {}", lossOrdersClose);
+                if (profit >= 0 || lossOrdersClose) {
+                    accountService.closeOrdersAndTrades(instrument);
+                    log.info("{}: Close orders and trades", instrument.getDisplayName());
+                    log.info("Balance: {}", accountService.getAccountDetails().getBalance());
+                }
             }
         }
 
@@ -156,6 +159,8 @@ public class TradeActor extends UntypedAbstractActor {
             return;
         }
 
+        order = getCurrentOrder();
+        Price price = accountService.getPrice(instrument);
         if (order.getId() == null && price.getSpread() <= spreadMax) {
             if (Signal.UP.equals(signal)) {
                 order.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
@@ -241,7 +246,6 @@ public class TradeActor extends UntypedAbstractActor {
             profit += trade.getUnrealizedPL();
         }
 
-        log.info("Profit {}: {}", instrument.getDisplayName(), profit);
         return profit;
     }
 
@@ -301,7 +305,6 @@ public class TradeActor extends UntypedAbstractActor {
 
     private Boolean isActive() {
         double accountBalance = accountService.getAccountDetails().getBalance();
-        log.info("Balance: {}", accountBalance);
         return isWorkTime() && (accountBalance > balanceLimit);
     }
 
@@ -331,6 +334,7 @@ public class TradeActor extends UntypedAbstractActor {
                     || currentStopLoss < currentRate.getBid().getC() - (trailingStopVal + trailingStopStep - 1) * instrument.getPip()) {
                 double newStopLoss = currentRate.getBid().getC() - trailingStopVal * instrument.getPip();
                 order.setPrice(newStopLoss);
+                order.setInstrument(instrument.getInstrument());
                 accountService.updateOrder(order);
                 log.info("{}, change sl: {} -> {}", order.getId(), currentStopLoss, newStopLoss);
             }
@@ -341,6 +345,7 @@ public class TradeActor extends UntypedAbstractActor {
                     || currentStopLoss > currentRate.getAsk().getC() + (trailingStopVal + trailingStopStep - 1) * instrument.getPip()) {
                 double newStopLoss = currentRate.getAsk().getC() + trailingStopVal * instrument.getPip();
                 order.setPrice(newStopLoss);
+                order.setInstrument(instrument.getInstrument());
                 accountService.updateOrder(order);
                 log.info("{}, change sl: {} -> {}", order.getId(), currentStopLoss, newStopLoss);
             }
@@ -360,6 +365,7 @@ public class TradeActor extends UntypedAbstractActor {
                 || OrderType.BUY.equals(type) && getCurrentOrder().getPrice() < (mid - takeProfit * instrument.getPip()))
                 ) {
             order.setPrice(newTakeProfit);
+            order.setInstrument(instrument.getInstrument());
             accountService.updateOrder(order);
             log.info("{}, change tp: {} -> {}", order.getId(), currentTakeProfit, newTakeProfit);
         }

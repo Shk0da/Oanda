@@ -2,6 +2,7 @@ package com.oanda.bot.actor;
 
 import akka.actor.UntypedAbstractActor;
 import com.google.common.collect.Maps;
+import com.oanda.bot.config.ActorConfig;
 import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
 import com.oanda.bot.domain.Step;
@@ -30,6 +31,7 @@ public class LearnActor extends UntypedAbstractActor {
     private final Instrument instrument;
     private final Step step;
 
+    private volatile NeuralNetwork<BackPropagation> neuralNetwork;
     private volatile Double lastPredict = 0D;
     private int vector = 14;
 
@@ -64,29 +66,32 @@ public class LearnActor extends UntypedAbstractActor {
 
     @Override
     public void onReceive(Object message) {
+        if (Messages.WORK.equals(message) && neuralNetwork != null) {
+            List<Candle> last = candleRepository.getLastCandles(instrument, step, vector);
+            double[] set = new double[vector];
+            for (int j = 0; j < vector; j++) {
+                set[j] = normalize(last.get(j).getCloseMid(), closeMin, closeMax);
+            }
+            neuralNetwork.setInput(set);
+            neuralNetwork.calculate();
+
+            double closePrice = deNormalize(neuralNetwork.getOutput()[0], closeMin, closeMax);
+            if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
+                lastPredict = closePrice;
+                getContext()
+                        .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
+                        .tell(new Messages.Predict(lastPredict), self());
+            }
+        }
+
         if (message instanceof Candle) {
             if (!status.equals(Status.TRAINED)) {
                 setStatus(Status.TRAINED);
                 List<Candle> candles = candleRepository.getLastCandles(instrument, step, 10_000);
                 log.info("Start training {} {}", instrument.getDisplayName(), step.name());
-                NeuralNetwork<BackPropagation> neuralNetwork = getBackPropagationNeuralNetwork(candles);
+                neuralNetwork = getBackPropagationNeuralNetwork(candles);
                 log.info("Stop training {} {}", instrument.getDisplayName(), step.name());
                 setStatus(Status.READY);
-
-                List<Candle> last = candleRepository.getLastCandles(instrument, step, vector);
-                double[] set = new double[vector];
-                for (int j = 0; j < vector; j++) {
-                    set[j] = normalize(last.get(j).getCloseMid(), closeMin, closeMax);
-                }
-                neuralNetwork.setInput(set);
-
-                neuralNetwork.calculate();
-                double closePrice = deNormalize(neuralNetwork.getOutput()[0], closeMin, closeMax);
-
-                if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
-                    lastPredict = closePrice;
-                    sender().tell(new Messages.Predict(lastPredict), self());
-                }
             }
         }
     }

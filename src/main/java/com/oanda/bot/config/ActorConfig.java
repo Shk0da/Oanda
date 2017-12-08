@@ -3,6 +3,8 @@ package com.oanda.bot.config;
 import akka.actor.ActorSystem;
 import akka.actor.InvalidActorNameException;
 import akka.actor.Props;
+import com.oanda.bot.actor.CollectorActor;
+import com.oanda.bot.actor.LearnActor;
 import com.oanda.bot.actor.SpringDIActor;
 import com.oanda.bot.actor.TradeActor;
 import com.oanda.bot.domain.Instrument;
@@ -44,8 +46,12 @@ public class ActorConfig {
             if (instrument != null) {
                 try {
                     Step step = Step.valueOf(cfg.getString("step"));
-                    system.actorOf(Props.create(SpringDIActor.class, TradeActor.class, instrument, step), "TradeActor_" + instrument.getInstrument() + "_" + step.name());
-                    log.info("Create: TradeActor_" + instrument.getInstrument() + "_" + step.name());
+                    system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, step), "CollectorActor_" + instrument + "_" + step.name());
+                    log.info("Create: CollectorActor_" + instrument + "_" + step.name());
+                    system.actorOf(Props.create(SpringDIActor.class, TradeActor.class, instrument, step), "TradeActor_" + instrument + "_" + step.name());
+                    log.info("Create: TradeActor_" + instrument + "_" + step.name());
+                    system.actorOf(Props.create(SpringDIActor.class, LearnActor.class, instrument, step), "LearnActor_" + instrument + "_" + step.name());
+                    log.info("Create: LearnActor_" + instrument + "_" + step.name());
                 } catch (InvalidActorNameException ex) {
                     log.error(ex.getMessage());
                 }

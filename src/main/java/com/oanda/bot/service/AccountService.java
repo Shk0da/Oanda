@@ -66,7 +66,7 @@ public class AccountService {
     }
 
     private String getOrdersUrl(Instrument instrument) {
-        return String.format(ordersUrl() + "?instrument=%s", instrument.toString());
+        return String.format(ordersUrl() + "?instrument=%s", instrument);
     }
 
     private String instrumentsUrl(String left, String right) {
