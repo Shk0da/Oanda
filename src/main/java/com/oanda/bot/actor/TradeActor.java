@@ -156,6 +156,7 @@ public class TradeActor extends UntypedAbstractActor {
                     log.info("Trade {}: [price: {}, units(c): {}, units(i): {}]",
                             trade.getId(), trade.getPrice(), trade.getCurrentUnits(), trade.getInitialUnits())
             );
+            log.info("Profit {}: {}", instrument.getDisplayName(), getProfit());
             log.info("Waiting...");
             return;
         }

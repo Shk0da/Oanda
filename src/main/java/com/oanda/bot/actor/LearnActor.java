@@ -160,7 +160,7 @@ public class LearnActor extends UntypedAbstractActor {
 
     private DataSet getDataSet(List<Candle> train, int vector, int shiftVector) {
         DataSet trainingSet = new DataSet(vector, 1);
-        for (int i = 0; i < train.size() - vector - shiftVector; i = i + vector + 1) {
+        for (int i = 0; i < train.size() - vector - 1 - shiftVector; i = i + vector + 1) {
             double[] set = new double[vector];
             for (int j = 0; j < vector; j++) {
                 set[j] = normalize(train.get(i + j).getCloseMid(), closeMin, closeMax);
