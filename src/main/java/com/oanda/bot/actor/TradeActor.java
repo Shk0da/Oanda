@@ -121,6 +121,7 @@ public class TradeActor extends UntypedAbstractActor {
         if (profit > satisfactorilyTP) {
             log.info("Profit {}: {}", instrument.getDisplayName(), profit);
             accountService.closeOrdersAndTrades(instrument);
+            setCurrentOrder(null);
             log.info("{}: Close orders and trades", instrument.getDisplayName());
             log.info("Balance: {}", accountService.getAccountDetails().getBalance());
         }
@@ -143,6 +144,7 @@ public class TradeActor extends UntypedAbstractActor {
                 log.info("The closure of unprofitable orders is {}", lossOrdersClose);
                 if (profit >= 0 || lossOrdersClose) {
                     accountService.closeOrdersAndTrades(instrument);
+                    setCurrentOrder(null);
                     log.info("{}: Close orders and trades", instrument.getDisplayName());
                     log.info("Balance: {}", accountService.getAccountDetails().getBalance());
                 }
