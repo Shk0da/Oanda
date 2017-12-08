@@ -161,24 +161,24 @@ public class TradeActor extends UntypedAbstractActor {
             return;
         }
 
-        order = getCurrentOrder();
         Price price = accountService.getPrice(instrument);
-        if (order.getId() == null && price.getSpread() <= spreadMax) {
+        if (price.getSpread() <= spreadMax) {
+            Order newOrder = getCurrentOrder();
             if (Signal.UP.equals(signal)) {
-                order.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
-                order.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
-                order.setPrice(getOrderPrice(OrderType.BUY));
-                order.setUnits(getMaxUnits(OrderType.BUY));
+                newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
+                newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
+                newOrder.setPrice(getOrderPrice(OrderType.BUY));
+                newOrder.setUnits(getMaxUnits(OrderType.BUY));
             }
 
             if (Signal.DOWN.equals(signal)) {
-                order.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
-                order.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
-                order.setPrice(getOrderPrice(OrderType.SELL));
-                order.setUnits(getMaxUnits(OrderType.SELL));
+                newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
+                newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
+                newOrder.setPrice(getOrderPrice(OrderType.SELL));
+                newOrder.setUnits(getMaxUnits(OrderType.SELL));
             }
 
-            sendOrder(order);
+            sendOrder(newOrder);
         }
     }
 
