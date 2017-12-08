@@ -134,7 +134,8 @@ public class TradeActor extends UntypedAbstractActor {
 
         Order order = getCurrentOrder();
         if (order.getId() != null) {
-            boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0) || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
+            boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0)
+                                || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
             if (trendChanged) {
                 log.info("The trend has changed: {} -> {}", Signal.UP.equals(signal) ? Signal.DOWN : Signal.UP, signal);
                 double profit = getProfit();

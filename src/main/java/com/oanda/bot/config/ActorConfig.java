@@ -17,19 +17,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.File;
+
 @Slf4j
 @Configuration
 public class ActorConfig {
 
     public static final String ACTOR_PATH_HEAD = "akka://TradingSystem/user/";
 
-    private static final Config config = ConfigFactory.load();
-
     @Autowired
     private InstrumentRepository instrumentRepository;
 
     @Bean(name = "actorSystem")
     public ActorSystem actorSystem() {
+        File externalConfig = new File("application.conf");
+        Config config = externalConfig.exists() ? ConfigFactory.parseFile(externalConfig) : ConfigFactory.load();
+
         ActorSystem system = ActorSystem.create("TradingSystem", config.getConfig("main").withFallback(config));
         Config pairsCfg = config.getConfig("pairs");
 

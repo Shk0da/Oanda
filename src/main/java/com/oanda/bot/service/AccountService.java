@@ -246,16 +246,20 @@ public class AccountService {
         orderData.put("cancelledTime", order.getCancelledTime());
 
         /*takeProfitOnFill*/
-        Map<String, String> takeProfitOnFill = Maps.newHashMap();
-        takeProfitOnFill.put("timeInForce", order.getTakeProfitOnFill().getTimeInForce().toString());
-        takeProfitOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getTakeProfitOnFill().getPrice()));
-        orderData.put("takeProfitOnFill", takeProfitOnFill);
+        if (order.getTakeProfitOnFill() != null) {
+            Map<String, String> takeProfitOnFill = Maps.newHashMap();
+            takeProfitOnFill.put("timeInForce", order.getTakeProfitOnFill().getTimeInForce().toString());
+            takeProfitOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getTakeProfitOnFill().getPrice()));
+            orderData.put("takeProfitOnFill", takeProfitOnFill);
+        }
 
         /*stopLossOnFill*/
-        Map<String, String> stopLossOnFill = Maps.newHashMap();
-        stopLossOnFill.put("timeInForce", order.getStopLossOnFill().getTimeInForce().toString());
-        stopLossOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getStopLossOnFill().getPrice()));
-        orderData.put("stopLossOnFill", stopLossOnFill);
+        if (order.getStopLossOnFill() != null) {
+            Map<String, String> stopLossOnFill = Maps.newHashMap();
+            stopLossOnFill.put("timeInForce", order.getStopLossOnFill().getTimeInForce().toString());
+            stopLossOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getStopLossOnFill().getPrice()));
+            orderData.put("stopLossOnFill", stopLossOnFill);
+        }
 
         Map<String, Object> map = Maps.newHashMap();
         map.put("order", orderData);
