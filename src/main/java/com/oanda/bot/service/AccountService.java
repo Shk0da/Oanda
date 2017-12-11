@@ -242,14 +242,21 @@ public class AccountService {
         orderData.put("positionFill", order.getPositionFill());
         orderData.put("units", order.getUnits());
         orderData.put("type", order.getType().toString());
-        orderData.put("price", String.format(Locale.ENGLISH, "%.5f", order.getPrice()));
+        if (order.getPrice() != null) {
+            orderData.put("price", String.format(Locale.ENGLISH, "%.5f", order.getPrice()));
+        }
+
+        if (order.getPriceBound() != null) {
+            orderData.put("priceBound", String.format(Locale.ENGLISH, "%.5f", order.getPriceBound()));
+        }
+
         orderData.put("cancelledTime", order.getCancelledTime());
 
         /*takeProfitOnFill*/
         if (order.getTakeProfitOnFill() != null) {
             Map<String, String> takeProfitOnFill = Maps.newHashMap();
             takeProfitOnFill.put("timeInForce", order.getTakeProfitOnFill().getTimeInForce().toString());
-            takeProfitOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getTakeProfitOnFill().getPrice()));
+            takeProfitOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getTakeProfit()));
             orderData.put("takeProfitOnFill", takeProfitOnFill);
         }
 
@@ -257,15 +264,15 @@ public class AccountService {
         if (order.getStopLossOnFill() != null) {
             Map<String, String> stopLossOnFill = Maps.newHashMap();
             stopLossOnFill.put("timeInForce", order.getStopLossOnFill().getTimeInForce().toString());
-            stopLossOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getStopLossOnFill().getPrice()));
+            stopLossOnFill.put("price", String.format(Locale.ENGLISH, "%.5f", order.getStopLoss()));
             orderData.put("stopLossOnFill", stopLossOnFill);
         }
 
         /*TrailingStopLoss*/
-        if (order.getTrailingStopLoss() != null) {
+        if (order.getTrailingStopLossOnFill() != null) {
             Map<String, String> trailingStopLossOnFill = Maps.newHashMap();
-            trailingStopLossOnFill.put("timeInForce", order.getTrailingStopLoss().getTimeInForce().toString());
-            trailingStopLossOnFill.put("distance", String.format(Locale.ENGLISH, "%.5f", order.getTrailingStopLoss().getDistance()));
+            trailingStopLossOnFill.put("timeInForce", order.getTrailingStopLossOnFill().getTimeInForce().toString());
+            trailingStopLossOnFill.put("distance", String.format(Locale.ENGLISH, "%.5f", order.getTrailingStopLoss()));
             orderData.put("trailingStopLossOnFill", trailingStopLossOnFill);
         }
 

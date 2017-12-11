@@ -21,15 +21,16 @@ public class Order {
     private OrderState state;
     private OrderType type = OrderType.MARKET;
     private String instrument;
-    private double units;
-    private double price;
+    private Integer units;
+    private Double price;
+    private Double priceBound;
     private TimeInForce timeInForce = TimeInForce.GTD;
     private String gtdTime = DateTimeUtil.rfc3339Plus2Days();
     private OrderPositionFill positionFill = OrderPositionFill.DEFAULT;
     private OrderTriggerCondition triggerCondition = OrderTriggerCondition.DEFAULT;
-    private Details takeProfitOnFill = new Details();
-    private Details stopLossOnFill = new Details();
-    private TrailingStopLossDetails trailingStopLoss = new TrailingStopLossDetails();
+    private Details takeProfitOnFill;
+    private Details stopLossOnFill;
+    private TrailingStopLossDetails trailingStopLossOnFill;
     private String cancelledTime = DateTimeUtil.rfc3339Plus2Days();
 
     public enum OrderState {
@@ -94,11 +95,15 @@ public class Order {
     }
 
     public double getStopLoss() {
-        return this.getStopLossOnFill().getPrice();
+        return stopLossOnFill != null ? getStopLossOnFill().getPrice() : 0D;
     }
 
     public double getTakeProfit() {
-        return this.getTakeProfitOnFill().getPrice();
+        return takeProfitOnFill != null ? getTakeProfitOnFill().getPrice() : 0D;
+    }
+
+    public double getTrailingStopLoss() {
+        return trailingStopLossOnFill != null ? getTrailingStopLossOnFill().getDistance() : 0D;
     }
 
     public String getOrderType() {
@@ -113,14 +118,14 @@ public class Order {
     public String toString() {
         return "Order{" +
                 "id='" + id + '\'' +
-                ", createTime='" + createTime + '\'' +
-                ", state=" + state +
+                ", state='" + state + '\'' +
                 ", instrument='" + instrument + '\'' +
                 ", units=" + units +
-                ", price=" + price +
-                ", takeProfit=" + (takeProfitOnFill != null ? takeProfitOnFill.price : "") +
-                ", stopLoss=" + (stopLossOnFill != null ? stopLossOnFill.price : "") +
-                ", trailingStopLoss=" + (trailingStopLoss != null ? trailingStopLoss.distance : "") +
+                (price != null ? ", price=" + price : "") +
+                (priceBound != null ? ", priceBound=" + priceBound : "") +
+                ", takeProfit=" + getTakeProfit() +
+                ", stopLoss=" + getStopLoss() +
+                ", trailingStopLoss=" + getTrailingStopLoss() +
                 '}';
     }
 }

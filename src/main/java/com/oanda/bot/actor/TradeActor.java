@@ -133,7 +133,7 @@ public class TradeActor extends UntypedAbstractActor {
         Signal signal = signal(predict);
         if (Signal.NONE.equals(signal)) return;
 
-        log.info("We have new signal: {}", signal);
+        log.info("We have new {} signal: {}", instrument.getDisplayName(), signal);
 
         Order order = getCurrentOrder();
         if (order.getId() != null) {
@@ -172,6 +172,7 @@ public class TradeActor extends UntypedAbstractActor {
                 newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
                 newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
                 newOrder.setPrice(getOrderPrice(OrderType.BUY));
+                newOrder.setPriceBound(getOrderPrice(OrderType.BUY));
                 newOrder.setUnits(getMaxUnits(OrderType.BUY));
             }
 
@@ -179,6 +180,7 @@ public class TradeActor extends UntypedAbstractActor {
                 newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
                 newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
                 newOrder.setPrice(getOrderPrice(OrderType.SELL));
+                newOrder.setPriceBound(getOrderPrice(OrderType.SELL));
                 newOrder.setUnits(getMaxUnits(OrderType.SELL));
             }
 
@@ -200,7 +202,7 @@ public class TradeActor extends UntypedAbstractActor {
         order.setType(Order.OrderType.MARKET);
 
         if (trailingStopEnable) {
-            order.setTrailingStopLoss(new Order.TrailingStopLossDetails(trailingStopDistance * instrument.getPip()));
+            order.setTrailingStopLossOnFill(new Order.TrailingStopLossDetails(trailingStopDistance * instrument.getPip()));
         }
 
         if (order.getId() != null) {
