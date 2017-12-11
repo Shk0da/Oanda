@@ -78,6 +78,11 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     @Override
+    public void preStart() {
+        balanceInfo();
+    }
+
+    @Override
     public void onReceive(Object message) {
         if (message instanceof Messages.WorkTime) {
             setWorkTime(((Messages.WorkTime) message).getIs());
@@ -107,6 +112,10 @@ public class TradeActor extends UntypedAbstractActor {
         unhandled(message);
     }
 
+    private void balanceInfo() {
+        log.info("Balance: {}", accountService.getAccountDetails().getBalance());
+    }
+
     private void checkProfit() {
         double profit = getProfit();
         Price price = accountService.getPrice(instrument);
@@ -116,7 +125,7 @@ public class TradeActor extends UntypedAbstractActor {
             accountService.closeOrdersAndTrades(instrument);
             setCurrentOrder(null);
             log.info("{}: Close orders and trades", instrument.getDisplayName());
-            log.info("Balance: {}", accountService.getAccountDetails().getBalance());
+            balanceInfo();
         }
     }
 
@@ -139,7 +148,7 @@ public class TradeActor extends UntypedAbstractActor {
                     accountService.closeOrdersAndTrades(instrument);
                     setCurrentOrder(null);
                     log.info("{}: Close orders and trades", instrument.getDisplayName());
-                    log.info("Balance: {}", accountService.getAccountDetails().getBalance());
+                    balanceInfo();
                 }
             }
         }

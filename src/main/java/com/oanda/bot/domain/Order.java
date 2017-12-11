@@ -4,17 +4,15 @@ import com.oanda.bot.util.DateTimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-@ToString
 public class Order {
 
     private String id;
@@ -109,5 +107,20 @@ public class Order {
 
     public Date getDateTime() {
         return DateTime.now().toDate();
+    }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "id='" + id + '\'' +
+                ", createTime='" + createTime + '\'' +
+                ", state=" + state +
+                ", instrument='" + instrument + '\'' +
+                ", units=" + units +
+                ", price=" + price +
+                ", takeProfit=" + (takeProfitOnFill != null ? takeProfitOnFill.price : "") +
+                ", stopLoss=" + (stopLossOnFill != null ? stopLossOnFill.price : "") +
+                ", trailingStopLoss=" + (trailingStopLoss != null ? trailingStopLoss.distance : "") +
+                '}';
     }
 }
