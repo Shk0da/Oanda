@@ -31,6 +31,7 @@ public class Order {
     private OrderTriggerCondition triggerCondition = OrderTriggerCondition.DEFAULT;
     private Details takeProfitOnFill = new Details();
     private Details stopLossOnFill = new Details();
+    private TrailingStopLossDetails trailingStopLoss = new TrailingStopLossDetails();
     private String cancelledTime = DateTimeUtil.rfc3339Plus2Days();
 
     public enum OrderState {
@@ -63,6 +64,18 @@ public class Order {
 
         public Details(double price) {
             this.price = price;
+        }
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    public static class TrailingStopLossDetails {
+        private double distance;
+        private TimeInForce timeInForce = TimeInForce.GTC;
+
+        public TrailingStopLossDetails(double distance) {
+            this.distance = distance;
         }
     }
 

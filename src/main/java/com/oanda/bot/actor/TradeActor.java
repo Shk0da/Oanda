@@ -63,14 +63,8 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.trailingstop.enable}")
     private Boolean trailingStopEnable;
 
-    @Value("${oandabot.trailingstop.onlyprofit}")
-    private Boolean trailingStopOnlyProfit;
-
-    @Value("${oandabot.trailingstop.val}")
-    private Double trailingStopVal;
-
-    @Value("${oandabot.trailingstop.step}")
-    private Double trailingStopStep;
+    @Value("${oandabot.trailingstop.distance}")
+    private Double trailingStopDistance;
 
     @Autowired
     private CandleRepository candleRepository;
@@ -94,7 +88,6 @@ public class TradeActor extends UntypedAbstractActor {
 
         if (Messages.WORK.equals(message)) {
             checkProfit();
-            trailingPositions();
         }
 
         if (message instanceof Candle) {
@@ -136,7 +129,7 @@ public class TradeActor extends UntypedAbstractActor {
         Order order = getCurrentOrder();
         if (order.getId() != null) {
             boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0)
-                                || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
+                    || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
             if (trendChanged) {
                 log.info("The trend has changed: {} -> {}", Signal.UP.equals(signal) ? Signal.DOWN : Signal.UP, signal);
                 double profit = getProfit();
@@ -196,6 +189,10 @@ public class TradeActor extends UntypedAbstractActor {
         order.setInstrument(instrument.toString());
         order.setPositionFill(Order.OrderPositionFill.DEFAULT);
         order.setType(Order.OrderType.MARKET);
+
+        if (trailingStopEnable) {
+            order.setTrailingStopLoss(new Order.TrailingStopLossDetails(trailingStopDistance * instrument.getPip()));
+        }
 
         if (order.getId() != null) {
             order = accountService.updateOrder(order);
@@ -310,68 +307,5 @@ public class TradeActor extends UntypedAbstractActor {
     private Boolean isActive() {
         double accountBalance = accountService.getAccountDetails().getBalance();
         return isWorkTime() && (accountBalance > balanceLimit);
-    }
-
-    private void trailingPositions() {
-        if (currentRate == null || getCurrentOrder().getId() == null) return;
-
-        Order.Orders orders = accountService.getOrders(instrument);
-        orders.getOrders().forEach(order -> {
-            if (Order.OrderType.STOP_LOSS.equals(order.getType())) {
-                trailingSL(order);
-            }
-
-            if (Order.OrderType.TAKE_PROFIT.equals(order.getType())) {
-                trailingTP(order);
-            }
-        });
-    }
-
-    private void trailingSL(final Order order) {
-        if (!trailingStopEnable) return;
-
-        OrderType type = getCurrentOrder().getUnits() > 0 ? OrderType.BUY : OrderType.SELL;
-        double currentStopLoss = order.getPrice();
-
-        if (OrderType.BUY.equals(type) && (currentRate.getBid().getC() - getCurrentOrder().getPrice()) > trailingStopVal * instrument.getPip()) {
-            if (!trailingStopOnlyProfit
-                    || currentStopLoss < currentRate.getBid().getC() - (trailingStopVal + trailingStopStep - 1) * instrument.getPip()) {
-                double newStopLoss = currentRate.getBid().getC() - trailingStopVal * instrument.getPip();
-                order.setPrice(newStopLoss);
-                order.setInstrument(instrument.getInstrument());
-                accountService.updateOrder(order);
-                log.info("{}, change sl: {} -> {}", order.getId(), currentStopLoss, newStopLoss);
-            }
-        }
-
-        if (OrderType.SELL.equals(type) && (getCurrentOrder().getPrice() - currentRate.getAsk().getC()) > trailingStopVal * instrument.getPip()) {
-            if (!trailingStopOnlyProfit
-                    || currentStopLoss > currentRate.getAsk().getC() + (trailingStopVal + trailingStopStep - 1) * instrument.getPip()) {
-                double newStopLoss = currentRate.getAsk().getC() + trailingStopVal * instrument.getPip();
-                order.setPrice(newStopLoss);
-                order.setInstrument(instrument.getInstrument());
-                accountService.updateOrder(order);
-                log.info("{}, change sl: {} -> {}", order.getId(), currentStopLoss, newStopLoss);
-            }
-        }
-    }
-
-    private void trailingTP(final Order order) {
-        if (!trailingStopEnable) return;
-
-        OrderType type = order.getUnits() > 0 ? OrderType.BUY : OrderType.SELL;
-        double currentTakeProfit = order.getPrice();
-        double newTakeProfit = currentTakeProfit + takeProfit * instrument.getPip() * (OrderType.BUY.equals(type) ? 1 : -1);
-        double mid = (currentRate.getAsk().getC() + currentRate.getBid().getC()) / 2;
-
-        if (currentTakeProfit != newTakeProfit
-                && (OrderType.SELL.equals(type) && getCurrentOrder().getPrice() > (mid + takeProfit * instrument.getPip())
-                || OrderType.BUY.equals(type) && getCurrentOrder().getPrice() < (mid - takeProfit * instrument.getPip()))
-                ) {
-            order.setPrice(newTakeProfit);
-            order.setInstrument(instrument.getInstrument());
-            accountService.updateOrder(order);
-            log.info("{}, change tp: {} -> {}", order.getId(), currentTakeProfit, newTakeProfit);
-        }
     }
 }

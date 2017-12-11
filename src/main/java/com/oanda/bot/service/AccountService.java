@@ -261,6 +261,14 @@ public class AccountService {
             orderData.put("stopLossOnFill", stopLossOnFill);
         }
 
+        /*TrailingStopLoss*/
+        if (order.getTrailingStopLoss() != null) {
+            Map<String, String> trailingStopLossOnFill = Maps.newHashMap();
+            trailingStopLossOnFill.put("timeInForce", order.getTrailingStopLoss().getTimeInForce().toString());
+            trailingStopLossOnFill.put("distance", String.format(Locale.ENGLISH, "%.5f", order.getTrailingStopLoss().getDistance()));
+            orderData.put("trailingStopLossOnFill", trailingStopLossOnFill);
+        }
+
         Map<String, Object> map = Maps.newHashMap();
         map.put("order", orderData);
 
