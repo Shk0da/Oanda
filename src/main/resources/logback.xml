@@ -38,6 +38,8 @@
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
+    </root>
+    <root level="warn">
         <appender-ref ref="TELEGRAM"/>
     </root>
 </configuration>

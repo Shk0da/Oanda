@@ -123,7 +123,7 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private void balanceInfo() {
-        log.info("Balance: {}", accountService.getAccountDetails().getBalance());
+        log.warn("Balance: {}", accountService.getAccountDetails().getBalance());
     }
 
     private void checkProfit() {
@@ -132,10 +132,10 @@ public class TradeActor extends UntypedAbstractActor {
         double satisfactorilyTP = ((price.getBid() + price.getAsk()) / 2) - (takeProfit * instrument.getPip());
         if (profit > satisfactorilyTP) {
             lastProfit = profit;
-            log.info("Profit {}: {}", instrument.getDisplayName(), profit);
+            log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
             accountService.closeOrdersAndTrades(instrument);
             setCurrentOrder(null);
-            log.info("{}: Close orders and trades", instrument.getDisplayName());
+            log.warn("{}: Close orders and trades", instrument.getDisplayName());
             balanceInfo();
         }
     }
@@ -144,7 +144,7 @@ public class TradeActor extends UntypedAbstractActor {
         Signal signal = signal(predict);
         if (Signal.NONE.equals(signal)) return;
 
-        log.info("We have new {} signal: {}", instrument.getDisplayName(), signal);
+        log.warn("We have new {} signal: {}", instrument.getDisplayName(), signal);
 
         Order order = getCurrentOrder();
         if (order.getId() != null) {
