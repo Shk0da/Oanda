@@ -51,8 +51,13 @@ public class ActorConfig {
                     Step step = Step.valueOf(cfg.getString("step"));
                     system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, step), "CollectorActor_" + instrument + "_" + step.name());
                     log.info("Create: CollectorActor_" + instrument + "_" + step.name());
+
+                    system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, Step.D), "CollectorActor_" + instrument + "_" + Step.D.name());
+                    log.info("Create: CollectorActor_" + instrument + "_" + Step.D.name());
+
                     system.actorOf(Props.create(SpringDIActor.class, TradeActor.class, instrument, step), "TradeActor_" + instrument + "_" + step.name());
                     log.info("Create: TradeActor_" + instrument + "_" + step.name());
+
                     system.actorOf(Props.create(SpringDIActor.class, LearnActor.class, instrument, step), "LearnActor_" + instrument + "_" + step.name());
                     log.info("Create: LearnActor_" + instrument + "_" + step.name());
                 } catch (InvalidActorNameException ex) {

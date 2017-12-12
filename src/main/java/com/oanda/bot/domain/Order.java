@@ -118,7 +118,7 @@ public class Order {
     public String toString() {
         return "Order{" +
                 "id='" + id + '\'' +
-                ", state='" + state + '\'' +
+                (state != null ? ", state='" + state + '\'' : "") +
                 ", instrument='" + instrument + '\'' +
                 ", units=" + units +
                 (price != null ? ", price=" + price : "") +

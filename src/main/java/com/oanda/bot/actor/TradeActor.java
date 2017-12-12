@@ -7,6 +7,9 @@ import com.oanda.bot.domain.*;
 import com.oanda.bot.repository.CandleRepository;
 import com.oanda.bot.service.AccountService;
 import com.oanda.bot.util.DateTimeUtil;
+import com.tictactec.ta.lib.Core;
+import com.tictactec.ta.lib.MInteger;
+import com.tictactec.ta.lib.RetCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +69,13 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.trailingstop.distance}")
     private Double trailingStopDistance;
 
+    @Value("${oandabot.martingale.enable}")
+    private Boolean martingaleEnable;
+
+    @Getter
+    @Setter
+    private Double lastProfit = 0D;
+
     @Autowired
     private CandleRepository candleRepository;
 
@@ -121,6 +131,7 @@ public class TradeActor extends UntypedAbstractActor {
         Price price = accountService.getPrice(instrument);
         double satisfactorilyTP = ((price.getBid() + price.getAsk()) / 2) - (takeProfit * instrument.getPip());
         if (profit > satisfactorilyTP) {
+            lastProfit = profit;
             log.info("Profit {}: {}", instrument.getDisplayName(), profit);
             accountService.closeOrdersAndTrades(instrument);
             setCurrentOrder(null);
@@ -145,6 +156,7 @@ public class TradeActor extends UntypedAbstractActor {
                 log.info("Profit {}: {}", instrument.getDisplayName(), profit);
                 log.info("The closure of unprofitable orders is {}", lossOrdersClose);
                 if (profit >= 0 || lossOrdersClose) {
+                    lastProfit = profit;
                     accountService.closeOrdersAndTrades(instrument);
                     setCurrentOrder(null);
                     log.info("{}: Close orders and trades", instrument.getDisplayName());
@@ -264,6 +276,10 @@ public class TradeActor extends UntypedAbstractActor {
     private Integer getMaxUnits(OrderType type) {
         double balance = accountService.getAccountDetails().getBalance();
         int units = (int) (balance / 100 * (1000 * balanceRisk));
+        if (martingaleEnable && lastProfit < 0) {
+            units = units * 2;
+        }
+
         return OrderType.BUY.equals(type) ? Math.abs(units) : Math.abs(units) * (-1);
     }
 
@@ -309,10 +325,45 @@ public class TradeActor extends UntypedAbstractActor {
         double spread = ask - bid;
         double predictPrice = predict.getPrice();
 
-        if (predictPrice > 0 && predictPrice > ask + spread) return Signal.UP;
-        if (predictPrice > 0 && predictPrice < bid - spread) return Signal.DOWN;
+        Signal signal = Signal.NONE;
+        if (predictPrice > 0 && predictPrice > ask + spread) signal = Signal.UP;
+        if (predictPrice > 0 && predictPrice < bid - spread) signal = Signal.DOWN;
 
-        return Signal.NONE;
+        if (!Signal.NONE.equals(signal)) {
+            List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 100);
+
+            double[] inHigh = new double[dayCandles.size()];
+            double[] inLow = new double[dayCandles.size()];
+            double[] inClose = new double[dayCandles.size()];
+            double[] out = new double[dayCandles.size()];
+
+            for (int i = 0; i < dayCandles.size(); i++) {
+                Candle candle = dayCandles.get(i);
+                inHigh[i] = candle.getHighMid();
+                inLow[i] = candle.getLowMid();
+                inClose[i] = candle.getCloseMid();
+            }
+
+            MInteger begin = new MInteger();
+            MInteger length = new MInteger();
+            RetCode retCode = (new Core()).adx(
+                    0, dayCandles.size() - 1,
+                    inHigh, inLow, inClose, 14,
+                    begin, length, out
+            );
+
+            double adx = 0;
+            if (RetCode.Success.equals(retCode)) {
+                adx = out[length.value - 1];
+            }
+
+            log.info("ADX {}: {}", instrument.getDisplayName(), adx);
+            if (adx > 0 && adx < 20) {
+                return Signal.NONE;
+            }
+        }
+
+        return signal;
     }
 
     private Boolean isActive() {
