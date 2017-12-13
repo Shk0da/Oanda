@@ -130,12 +130,23 @@ public class TradeActor extends UntypedAbstractActor {
 
     private void checkProfit() {
         Order current = getCurrentOrder();
-        if (current == null) return;
+        if (current == null || current.getPrice() == null) return;
 
         Price price = accountService.getPrice(instrument);
-        double profit = getProfit();
-        double satisfactorilyTP = (current.getTakeProfit() + current.getPrice()) / 2;
+        double currentTP = current.getTakeProfit();
+        if (currentTP == 0) {
+            if (current.getUnits() > 0) {
+                currentTP = price.getAsk() + price.getSpread() + takeProfit * instrument.getPip();
+            }
+
+            if (current.getUnits() < 0) {
+                currentTP = price.getBid() - price.getSpread() - takeProfit * instrument.getPip();
+            }
+        }
+
+        double satisfactorilyTP = (currentTP + current.getPrice()) / 2;
         double midPrice = (price.getBid() + price.getAsk()) / 2;
+        double profit = getProfit();
         if (profit > 0 && midPrice > satisfactorilyTP) {
             lastProfit = profit;
             log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
