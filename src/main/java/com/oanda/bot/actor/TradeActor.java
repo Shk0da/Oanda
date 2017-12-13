@@ -154,11 +154,11 @@ public class TradeActor extends UntypedAbstractActor {
             boolean trendChanged = (Signal.UP.equals(signal) && order.getUnits() < 0)
                     || (Signal.DOWN.equals(signal) && order.getUnits() > 0);
             if (trendChanged) {
-                log.info("The {} trend has changed: {} -> {}",
+                log.warn("The {} trend has changed: {} -> {}",
                         instrument.getDisplayName(), Signal.UP.equals(signal) ? Signal.DOWN : Signal.UP, signal);
                 double profit = getProfit();
-                log.info("Profit {}: {}", instrument.getDisplayName(), profit);
-                log.info("The closure of unprofitable orders is {}", lossOrdersClose);
+                log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
+                log.warn("The closure of unprofitable orders is {}", lossOrdersClose);
                 if (profit >= 0 || lossOrdersClose) {
                     lastProfit = profit;
                     accountService.closeOrdersAndTrades(instrument);
@@ -264,7 +264,7 @@ public class TradeActor extends UntypedAbstractActor {
             currentRate = candleRepository.getLastCandle(instrument, step);
         }
 
-        return OrderType.BUY.equals(type) ? currentRate.getBid().getH() : currentRate.getAsk().getL();
+        return OrderType.BUY.equals(type) ? currentRate.getAsk().getL() : currentRate.getBid().getH();
     }
 
     private Double getProfit() {
@@ -279,7 +279,7 @@ public class TradeActor extends UntypedAbstractActor {
 
     private Integer getMaxUnits(OrderType type) {
         double balance = accountService.getAccountDetails().getBalance();
-        int units = (int) (balance / 100 * (1000 * balanceRisk));
+        int units = (int) (balance / 100 * (1000 * balanceRisk)) / 10;
         if (martingaleEnable && lastProfit < 0) {
             units = units * 2;
         }
@@ -333,8 +333,6 @@ public class TradeActor extends UntypedAbstractActor {
         if (predictPrice > 0 && predictPrice > ask + spread) signal = Signal.UP;
         if (predictPrice > 0 && predictPrice < bid - spread) signal = Signal.DOWN;
 
-        if (Signal.NONE.equals(signal)) return signal;
-
         List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 100);
         double[] inHigh = new double[dayCandles.size()];
         double[] inLow = new double[dayCandles.size()];
@@ -347,7 +345,7 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         // MA
-        Signal movingAverage = movingAverage(inClose);
+        Signal movingAverage = movingAverage(inClose, predictPrice);
         if (signal.equals(Signal.UP) && movingAverage.equals(Signal.UP)) {
             signal = Signal.UP;
         } else if (signal.equals(Signal.DOWN) && movingAverage.equals(Signal.DOWN)) {
@@ -356,10 +354,7 @@ public class TradeActor extends UntypedAbstractActor {
             return Signal.NONE;
         }
 
-        // ADX
-        signal = adx(signal, inClose, inLow, inHigh);
-
-        return signal;
+        return adx(signal, inClose, inLow, inHigh);
     }
 
     private Signal adx(Signal signal, double[] inClose, double[] inLow, double[] inHigh) {
@@ -378,47 +373,37 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         log.info("ADX {}: {}", instrument.getDisplayName(), adx);
-        if (adx > 0 && adx < 20) {
+        double limit = 20;
+        if (adx > 0 && adx < limit) {
             return Signal.NONE;
         }
 
         return signal;
     }
 
-    private Signal movingAverage(double[] inClose) {
-        double[] outMABlack = new double[inClose.length];
-        MInteger beginMABlack = new MInteger();
-        MInteger lengthMABlack = new MInteger();
-        RetCode retCodeMABlack = talib.movingAverage(
-                0, inClose.length - 1, inClose, 14, MAType.Sma, beginMABlack, lengthMABlack, outMABlack
-        );
-        double blackMA = RetCode.Success.equals(retCodeMABlack) ? outMABlack[lengthMABlack.value - 1] : 0;
-        log.info("BlackMA {}: {}", instrument.getDisplayName(), blackMA);
-
-        double[] outMAGray = new double[inClose.length];
-        MInteger beginMAGray = new MInteger();
-        MInteger lengthMAGray = new MInteger();
-        RetCode retCodeMAGray = talib.movingAverage(
-                0, inClose.length - 1, inClose, 7, MAType.Sma, beginMAGray, lengthMAGray, outMAGray
-        );
-        double grayMA = RetCode.Success.equals(retCodeMAGray) ? outMAGray[lengthMAGray.value - 1] : 0;
-        log.info("GrayMA {}: {}", instrument.getDisplayName(), grayMA);
-
-        double[] outMAWhite = new double[inClose.length];
-        MInteger beginMAWhite = new MInteger();
-        MInteger lengthMAWhite = new MInteger();
-        RetCode retCodeMAWhite = talib.movingAverage(
-                0, inClose.length - 1, inClose, 5, MAType.Sma, beginMAWhite, lengthMAWhite, outMAWhite
-        );
-        double whiteMA = RetCode.Success.equals(retCodeMAWhite) ? outMAWhite[lengthMAWhite.value - 1] : 0;
-        log.info("WhiteMA {}: {}", instrument.getDisplayName(), whiteMA);
-
-        Signal movingAverage = Signal.NONE;
-        if (inClose[inClose.length - 1] > blackMA && blackMA > grayMA && blackMA > whiteMA && grayMA > whiteMA) {
-            movingAverage = Signal.UP;
+    private Signal movingAverage(double[] inClose, double predictPrice) {
+        int step = 7;
+        int epoch = 9;
+        int end = step * epoch;
+        int maRelation = 0;
+        for (int i = step; i <= end; i = i + step) {
+            double[] outMA = new double[inClose.length];
+            MInteger beginMA = new MInteger();
+            MInteger lengthMA = new MInteger();
+            RetCode retCodeMA = talib.movingAverage(
+                    0, inClose.length - 1, inClose, i, MAType.Sma, beginMA, lengthMA, outMA
+            );
+            double ma = RetCode.Success.equals(retCodeMA) ? outMA[lengthMA.value - 1] : 0;
+            if (ma != 0 && ma > predictPrice) maRelation++;
+            if (ma != 0 && ma < predictPrice) maRelation--;
         }
 
-        if (inClose[inClose.length - 1] < blackMA && blackMA < grayMA && blackMA < whiteMA && whiteMA > grayMA) {
+        log.info("MovingAverage {}: {}", instrument.getDisplayName(), maRelation);
+
+        Signal movingAverage = Signal.NONE;
+        if (maRelation >= epoch) {
+            movingAverage = Signal.DOWN;
+        } else if (maRelation <= -epoch) {
             movingAverage = Signal.UP;
         }
 
