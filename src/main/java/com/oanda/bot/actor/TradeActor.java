@@ -353,6 +353,7 @@ public class TradeActor extends UntypedAbstractActor {
                     0, inClose.length - 1, inClose, 14, MAType.Sma, beginMABlack, lengthMABlack, outMABlack
             );
             double blackMA = RetCode.Success.equals(retCodeMABlack) ? outMABlack[lengthMABlack.value - 1] : 0;
+            log.info("BlackMA {}: {}", instrument.getDisplayName(), blackMA);
 
             double[] outMAGray = new double[inClose.length];
             MInteger beginMAGray = new MInteger();
@@ -361,6 +362,7 @@ public class TradeActor extends UntypedAbstractActor {
                     0, inClose.length - 1, inClose, 7, MAType.Sma, beginMAGray, lengthMAGray, outMAGray
             );
             double grayMA = RetCode.Success.equals(retCodeMAGray) ? outMAGray[lengthMAGray.value - 1] : 0;
+            log.info("GrayMA {}: {}", instrument.getDisplayName(), grayMA);
 
             double[] outMAWhite = new double[inClose.length];
             MInteger beginMAWhite = new MInteger();
@@ -369,6 +371,7 @@ public class TradeActor extends UntypedAbstractActor {
                     0, inClose.length - 1, inClose, 5, MAType.Sma, beginMAWhite, lengthMAWhite, outMAWhite
             );
             double whiteMA = RetCode.Success.equals(retCodeMAWhite) ? outMAWhite[lengthMAWhite.value - 1] : 0;
+            log.info("WhiteMA {}: {}", instrument.getDisplayName(), whiteMA);
 
             Signal movingAverage = Signal.NONE;
             if (predictPrice > blackMA && blackMA > grayMA && blackMA > whiteMA && grayMA > whiteMA) {
