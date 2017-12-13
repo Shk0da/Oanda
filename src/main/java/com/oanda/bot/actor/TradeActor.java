@@ -331,7 +331,6 @@ public class TradeActor extends UntypedAbstractActor {
         if (predictPrice > 0 && predictPrice > ask + spread) signal = Signal.UP;
         if (predictPrice > 0 && predictPrice < bid - spread) signal = Signal.DOWN;
 
-
         if (!Signal.NONE.equals(signal)) {
             final Core talib = new Core();
             List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 100);
@@ -351,7 +350,7 @@ public class TradeActor extends UntypedAbstractActor {
             MInteger beginMABlack = new MInteger();
             MInteger lengthMABlack = new MInteger();
             RetCode retCodeMABlack = talib.movingAverage(
-                    0, inClose.length, inClose, 14, MAType.Sma, beginMABlack, lengthMABlack, outMABlack
+                    0, inClose.length - 1, inClose, 14, MAType.Sma, beginMABlack, lengthMABlack, outMABlack
             );
             double blackMA = RetCode.Success.equals(retCodeMABlack) ? outMABlack[lengthMABlack.value - 1] : 0;
 
@@ -359,7 +358,7 @@ public class TradeActor extends UntypedAbstractActor {
             MInteger beginMAGray = new MInteger();
             MInteger lengthMAGray = new MInteger();
             RetCode retCodeMAGray = talib.movingAverage(
-                    0, inClose.length, inClose, 7, MAType.Sma, beginMAGray, lengthMAGray, outMAGray
+                    0, inClose.length - 1, inClose, 7, MAType.Sma, beginMAGray, lengthMAGray, outMAGray
             );
             double grayMA = RetCode.Success.equals(retCodeMAGray) ? outMAGray[lengthMAGray.value - 1] : 0;
 
@@ -367,7 +366,7 @@ public class TradeActor extends UntypedAbstractActor {
             MInteger beginMAWhite = new MInteger();
             MInteger lengthMAWhite = new MInteger();
             RetCode retCodeMAWhite = talib.movingAverage(
-                    0, inClose.length, inClose, 5, MAType.Sma, beginMAWhite, lengthMAWhite, outMAWhite
+                    0, inClose.length - 1, inClose, 5, MAType.Sma, beginMAWhite, lengthMAWhite, outMAWhite
             );
             double whiteMA = RetCode.Success.equals(retCodeMAWhite) ? outMAWhite[lengthMAWhite.value - 1] : 0;
 
