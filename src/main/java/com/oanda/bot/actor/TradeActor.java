@@ -8,7 +8,6 @@ import com.oanda.bot.repository.CandleRepository;
 import com.oanda.bot.service.AccountService;
 import com.oanda.bot.util.DateTimeUtil;
 import com.tictactec.ta.lib.Core;
-import com.tictactec.ta.lib.MAType;
 import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 import lombok.Getter;
@@ -373,7 +372,7 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         log.info("ADX {}: {}", instrument.getDisplayName(), adx);
-        double limit = 20;
+        double limit = 19;
         if (adx > 0 && adx < limit) {
             return Signal.NONE;
         }
@@ -390,21 +389,21 @@ public class TradeActor extends UntypedAbstractActor {
             double[] outMA = new double[inClose.length];
             MInteger beginMA = new MInteger();
             MInteger lengthMA = new MInteger();
-            RetCode retCodeMA = talib.movingAverage(
-                    0, inClose.length - 1, inClose, i, MAType.Sma, beginMA, lengthMA, outMA
+            RetCode retCodeMA = talib.trima(
+                    0, inClose.length - 1, inClose, i, beginMA, lengthMA, outMA
             );
             double ma = RetCode.Success.equals(retCodeMA) ? outMA[lengthMA.value - 1] : 0;
             if (ma != 0 && ma > predictPrice) maRelation++;
             if (ma != 0 && ma < predictPrice) maRelation--;
         }
 
-        log.info("MovingAverage {}: {}", instrument.getDisplayName(), maRelation);
-
         Signal movingAverage = Signal.NONE;
-        if (maRelation >= epoch) {
+        if (maRelation >= epoch - 1) {
             movingAverage = Signal.DOWN;
-        } else if (maRelation <= -epoch) {
+            log.info("MovingAverage {}: {}", instrument.getDisplayName(), movingAverage);
+        } else if (maRelation <= -epoch + 1) {
             movingAverage = Signal.UP;
+            log.info("MovingAverage {}: {}", instrument.getDisplayName(), movingAverage);
         }
 
         return movingAverage;
