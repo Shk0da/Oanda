@@ -32,6 +32,8 @@ public class TradeActor extends UntypedAbstractActor {
 
     private enum Signal {UP, DOWN, NONE}
 
+    private final Core talib = new Core();
+
     protected final Instrument instrument;
     protected final Step step;
 
@@ -331,87 +333,96 @@ public class TradeActor extends UntypedAbstractActor {
         if (predictPrice > 0 && predictPrice > ask + spread) signal = Signal.UP;
         if (predictPrice > 0 && predictPrice < bid - spread) signal = Signal.DOWN;
 
-        if (!Signal.NONE.equals(signal)) {
-            final Core talib = new Core();
-            List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 100);
-            double[] inHigh = new double[dayCandles.size()];
-            double[] inLow = new double[dayCandles.size()];
-            double[] inClose = new double[dayCandles.size() + 1];
-            for (int i = 0; i < dayCandles.size(); i++) {
-                Candle candle = dayCandles.get(i);
-                inHigh[i] = candle.getHighMid();
-                inLow[i] = candle.getLowMid();
-                inClose[i] = candle.getCloseMid();
-            }
-            inClose[inClose.length - 1] = predictPrice;
+        if (Signal.NONE.equals(signal)) return signal;
 
-            // MA
-            double[] outMABlack = new double[inClose.length];
-            MInteger beginMABlack = new MInteger();
-            MInteger lengthMABlack = new MInteger();
-            RetCode retCodeMABlack = talib.movingAverage(
-                    0, inClose.length - 1, inClose, 14, MAType.Sma, beginMABlack, lengthMABlack, outMABlack
-            );
-            double blackMA = RetCode.Success.equals(retCodeMABlack) ? outMABlack[lengthMABlack.value - 1] : 0;
-            log.info("BlackMA {}: {}", instrument.getDisplayName(), blackMA);
+        List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 100);
+        double[] inHigh = new double[dayCandles.size()];
+        double[] inLow = new double[dayCandles.size()];
+        double[] inClose = new double[dayCandles.size()];
+        for (int i = 0; i < dayCandles.size(); i++) {
+            Candle candle = dayCandles.get(i);
+            inHigh[i] = candle.getHighMid();
+            inLow[i] = candle.getLowMid();
+            inClose[i] = candle.getCloseMid();
+        }
 
-            double[] outMAGray = new double[inClose.length];
-            MInteger beginMAGray = new MInteger();
-            MInteger lengthMAGray = new MInteger();
-            RetCode retCodeMAGray = talib.movingAverage(
-                    0, inClose.length - 1, inClose, 7, MAType.Sma, beginMAGray, lengthMAGray, outMAGray
-            );
-            double grayMA = RetCode.Success.equals(retCodeMAGray) ? outMAGray[lengthMAGray.value - 1] : 0;
-            log.info("GrayMA {}: {}", instrument.getDisplayName(), grayMA);
+        // MA
+        Signal movingAverage = movingAverage(inClose);
+        if (signal.equals(Signal.UP) && movingAverage.equals(Signal.UP)) {
+            signal = Signal.UP;
+        } else if (signal.equals(Signal.DOWN) && movingAverage.equals(Signal.DOWN)) {
+            signal = Signal.DOWN;
+        } else {
+            return Signal.NONE;
+        }
 
-            double[] outMAWhite = new double[inClose.length];
-            MInteger beginMAWhite = new MInteger();
-            MInteger lengthMAWhite = new MInteger();
-            RetCode retCodeMAWhite = talib.movingAverage(
-                    0, inClose.length - 1, inClose, 5, MAType.Sma, beginMAWhite, lengthMAWhite, outMAWhite
-            );
-            double whiteMA = RetCode.Success.equals(retCodeMAWhite) ? outMAWhite[lengthMAWhite.value - 1] : 0;
-            log.info("WhiteMA {}: {}", instrument.getDisplayName(), whiteMA);
+        // ADX
+        signal = adx(signal, inClose, inLow, inHigh);
 
-            Signal movingAverage = Signal.NONE;
-            if (predictPrice > blackMA && blackMA > grayMA && blackMA > whiteMA && grayMA > whiteMA) {
-                movingAverage = Signal.UP;
-            }
+        return signal;
+    }
 
-            if (predictPrice < blackMA && blackMA < grayMA && blackMA < whiteMA && whiteMA > grayMA) {
-                movingAverage = Signal.UP;
-            }
+    private Signal adx(Signal signal, double[] inClose, double[] inLow, double[] inHigh) {
+        double[] outADX = new double[inClose.length];
+        MInteger beginADX = new MInteger();
+        MInteger lengthADX = new MInteger();
+        RetCode retCodeADX = talib.adx(
+                0, inClose.length - 1,
+                inHigh, inLow, inClose, 14,
+                beginADX, lengthADX, outADX
+        );
 
-            if (signal.equals(Signal.UP) && movingAverage.equals(Signal.UP)) {
-                signal = Signal.UP;
-            } else if (signal.equals(Signal.DOWN) && movingAverage.equals(Signal.DOWN)) {
-                signal = Signal.DOWN;
-            } else {
-                return Signal.NONE;
-            }
+        double adx = 0;
+        if (RetCode.Success.equals(retCodeADX)) {
+            adx = outADX[lengthADX.value - 1];
+        }
 
-            // ADX
-            double[] outADX = new double[dayCandles.size()];
-            MInteger beginADX = new MInteger();
-            MInteger lengthADX = new MInteger();
-            RetCode retCodeADX = talib.adx(
-                    0, dayCandles.size() - 1,
-                    inHigh, inLow, inClose, 14,
-                    beginADX, lengthADX, outADX
-            );
-
-            double adx = 0;
-            if (RetCode.Success.equals(retCodeADX)) {
-                adx = outADX[lengthADX.value - 1];
-            }
-
-            log.info("ADX {}: {}", instrument.getDisplayName(), adx);
-            if (adx > 0 && adx < 20) {
-                return Signal.NONE;
-            }
+        log.info("ADX {}: {}", instrument.getDisplayName(), adx);
+        if (adx > 0 && adx < 20) {
+            return Signal.NONE;
         }
 
         return signal;
+    }
+
+    private Signal movingAverage(double[] inClose) {
+        double[] outMABlack = new double[inClose.length];
+        MInteger beginMABlack = new MInteger();
+        MInteger lengthMABlack = new MInteger();
+        RetCode retCodeMABlack = talib.movingAverage(
+                0, inClose.length - 1, inClose, 14, MAType.Sma, beginMABlack, lengthMABlack, outMABlack
+        );
+        double blackMA = RetCode.Success.equals(retCodeMABlack) ? outMABlack[lengthMABlack.value - 1] : 0;
+        log.info("BlackMA {}: {}", instrument.getDisplayName(), blackMA);
+
+        double[] outMAGray = new double[inClose.length];
+        MInteger beginMAGray = new MInteger();
+        MInteger lengthMAGray = new MInteger();
+        RetCode retCodeMAGray = talib.movingAverage(
+                0, inClose.length - 1, inClose, 7, MAType.Sma, beginMAGray, lengthMAGray, outMAGray
+        );
+        double grayMA = RetCode.Success.equals(retCodeMAGray) ? outMAGray[lengthMAGray.value - 1] : 0;
+        log.info("GrayMA {}: {}", instrument.getDisplayName(), grayMA);
+
+        double[] outMAWhite = new double[inClose.length];
+        MInteger beginMAWhite = new MInteger();
+        MInteger lengthMAWhite = new MInteger();
+        RetCode retCodeMAWhite = talib.movingAverage(
+                0, inClose.length - 1, inClose, 5, MAType.Sma, beginMAWhite, lengthMAWhite, outMAWhite
+        );
+        double whiteMA = RetCode.Success.equals(retCodeMAWhite) ? outMAWhite[lengthMAWhite.value - 1] : 0;
+        log.info("WhiteMA {}: {}", instrument.getDisplayName(), whiteMA);
+
+        Signal movingAverage = Signal.NONE;
+        if (inClose[inClose.length - 1] > blackMA && blackMA > grayMA && blackMA > whiteMA && grayMA > whiteMA) {
+            movingAverage = Signal.UP;
+        }
+
+        if (inClose[inClose.length - 1] < blackMA && blackMA < grayMA && blackMA < whiteMA && whiteMA > grayMA) {
+            movingAverage = Signal.UP;
+        }
+
+        return movingAverage;
     }
 
     private Boolean isActive() {
