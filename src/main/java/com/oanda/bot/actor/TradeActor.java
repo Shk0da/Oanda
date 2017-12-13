@@ -8,6 +8,7 @@ import com.oanda.bot.repository.CandleRepository;
 import com.oanda.bot.service.AccountService;
 import com.oanda.bot.util.DateTimeUtil;
 import com.tictactec.ta.lib.Core;
+import com.tictactec.ta.lib.MAType;
 import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 import lombok.Getter;
@@ -135,7 +136,7 @@ public class TradeActor extends UntypedAbstractActor {
             log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
             accountService.closeOrdersAndTrades(instrument);
             setCurrentOrder(null);
-            log.warn("{}: Close orders and trades", instrument.getDisplayName());
+            log.info("{}: Close orders and trades", instrument.getDisplayName());
             balanceInfo();
         }
     }
@@ -144,7 +145,7 @@ public class TradeActor extends UntypedAbstractActor {
         Signal signal = signal(predict);
         if (Signal.NONE.equals(signal)) return;
 
-        log.warn("We have new {} signal: {}", instrument.getDisplayName(), signal);
+        log.info("We have new {} signal: {}", instrument.getDisplayName(), signal);
 
         Order order = getCurrentOrder();
         if (order.getId() != null) {
@@ -231,7 +232,7 @@ public class TradeActor extends UntypedAbstractActor {
             accountService.closeOrdersAndTrades(instrument);
         } else {
             setCurrentOrder(order);
-            log.info("Created: {}", order);
+            log.warn("Created: {}", order);
         }
     }
 
@@ -330,32 +331,76 @@ public class TradeActor extends UntypedAbstractActor {
         if (predictPrice > 0 && predictPrice > ask + spread) signal = Signal.UP;
         if (predictPrice > 0 && predictPrice < bid - spread) signal = Signal.DOWN;
 
-        if (!Signal.NONE.equals(signal)) {
-            List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 100);
 
+        if (!Signal.NONE.equals(signal)) {
+            final Core talib = new Core();
+            List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 100);
             double[] inHigh = new double[dayCandles.size()];
             double[] inLow = new double[dayCandles.size()];
-            double[] inClose = new double[dayCandles.size()];
-            double[] out = new double[dayCandles.size()];
-
+            double[] inClose = new double[dayCandles.size() + 1];
             for (int i = 0; i < dayCandles.size(); i++) {
                 Candle candle = dayCandles.get(i);
                 inHigh[i] = candle.getHighMid();
                 inLow[i] = candle.getLowMid();
                 inClose[i] = candle.getCloseMid();
             }
+            inClose[inClose.length - 1] = predictPrice;
 
-            MInteger begin = new MInteger();
-            MInteger length = new MInteger();
-            RetCode retCode = (new Core()).adx(
+            // MA
+            double[] outMABlack = new double[inClose.length];
+            MInteger beginMABlack = new MInteger();
+            MInteger lengthMABlack = new MInteger();
+            RetCode retCodeMABlack = talib.movingAverage(
+                    0, inClose.length, inClose, 14, MAType.Sma, beginMABlack, lengthMABlack, outMABlack
+            );
+            double blackMA = RetCode.Success.equals(retCodeMABlack) ? outMABlack[lengthMABlack.value - 1] : 0;
+
+            double[] outMAGray = new double[inClose.length];
+            MInteger beginMAGray = new MInteger();
+            MInteger lengthMAGray = new MInteger();
+            RetCode retCodeMAGray = talib.movingAverage(
+                    0, inClose.length, inClose, 7, MAType.Sma, beginMAGray, lengthMAGray, outMAGray
+            );
+            double grayMA = RetCode.Success.equals(retCodeMAGray) ? outMAGray[lengthMAGray.value - 1] : 0;
+
+            double[] outMAWhite = new double[inClose.length];
+            MInteger beginMAWhite = new MInteger();
+            MInteger lengthMAWhite = new MInteger();
+            RetCode retCodeMAWhite = talib.movingAverage(
+                    0, inClose.length, inClose, 5, MAType.Sma, beginMAWhite, lengthMAWhite, outMAWhite
+            );
+            double whiteMA = RetCode.Success.equals(retCodeMAWhite) ? outMAWhite[lengthMAWhite.value - 1] : 0;
+
+            Signal movingAverage = Signal.NONE;
+            if (predictPrice > blackMA && blackMA > grayMA && blackMA > whiteMA && grayMA > whiteMA) {
+                movingAverage = Signal.UP;
+            }
+
+            if (predictPrice < blackMA && blackMA < grayMA && blackMA < whiteMA && whiteMA > grayMA) {
+                movingAverage = Signal.UP;
+            }
+
+            if (signal.equals(Signal.UP) && movingAverage.equals(Signal.UP)) {
+                signal = Signal.UP;
+            } else if (signal.equals(Signal.DOWN) && movingAverage.equals(Signal.DOWN)) {
+                signal = Signal.DOWN;
+            } else {
+                return Signal.NONE;
+            }
+
+            // ADX
+            double[] outADX = new double[dayCandles.size()];
+            MInteger beginADX = new MInteger();
+            MInteger lengthADX = new MInteger();
+            RetCode retCodeADX = talib.adx(
                     0, dayCandles.size() - 1,
                     inHigh, inLow, inClose, 14,
-                    begin, length, out
+                    beginADX, lengthADX, outADX
             );
 
             double adx = 0;
-            if (RetCode.Success.equals(retCode)) {
-                adx = out[length.value - 1];
+            if (RetCode.Success.equals(retCodeADX)) {
+                adx = outADX[lengthADX.value - 1];
             }
 
             log.info("ADX {}: {}", instrument.getDisplayName(), adx);
