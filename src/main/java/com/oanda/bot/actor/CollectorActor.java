@@ -76,8 +76,19 @@ public class CollectorActor extends UntypedAbstractActor {
         Candle lastCandle = candleRepository.getLastCandle(instrument, step);
         if (lastCandle == null) {
             switch (step) {
+                case M5:
+                    return DateTime.now(DateTimeZone.getDefault()).minusDays(10);
+                case M10:
+                case M15:
+                    return DateTime.now(DateTimeZone.getDefault()).minusDays(30);
+                case M30:
+                    return DateTime.now(DateTimeZone.getDefault()).minusDays(60);
+                case H1:
+                    return DateTime.now(DateTimeZone.getDefault()).minusDays(120);
+                case H4:
                 case D:
                     return DateTime.now(DateTimeZone.getDefault()).minusDays(365);
+                case M1:
                 default:
                     return DateTime.now(DateTimeZone.getDefault()).minusDays(2);
             }

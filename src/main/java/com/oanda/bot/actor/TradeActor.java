@@ -147,6 +147,7 @@ public class TradeActor extends UntypedAbstractActor {
         double satisfactorilyTP = (currentTP + current.getPrice()) / 2;
         double midPrice = (price.getBid() + price.getAsk()) / 2;
         double profit = getProfit();
+
         if (profit > 0 && midPrice > satisfactorilyTP) {
             lastProfit = profit;
             log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
