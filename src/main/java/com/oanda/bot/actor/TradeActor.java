@@ -360,7 +360,8 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         // MA
-        Signal movingAverage = movingAverage(inClose, predictPrice);
+        double avgPP = ((price.getCloseoutBid() + price.getCloseoutAsk()) / 2 + inClose[inClose.length - 1] + predictPrice) / 3;
+        Signal movingAverage = movingAverage(inClose, avgPP);
         if (signal.equals(Signal.UP) && movingAverage.equals(Signal.UP)) {
             signal = Signal.UP;
         } else if (signal.equals(Signal.DOWN) && movingAverage.equals(Signal.DOWN)) {
@@ -401,7 +402,8 @@ public class TradeActor extends UntypedAbstractActor {
         int epoch = 9;
         int end = step * epoch;
         int maRelation = 0;
-        for (int i = step; i <= end; i = i + step) {
+        double[] mas = new double[epoch];
+        for (int i = step, j = 0; i <= end; i = i + step, j++) {
             double[] outMA = new double[inClose.length];
             MInteger beginMA = new MInteger();
             MInteger lengthMA = new MInteger();
@@ -411,13 +413,14 @@ public class TradeActor extends UntypedAbstractActor {
             double ma = RetCode.Success.equals(retCodeMA) ? outMA[lengthMA.value - 1] : 0;
             if (ma != 0 && ma > predictPrice) maRelation++;
             if (ma != 0 && ma < predictPrice) maRelation--;
+            mas[j] = ma;
         }
 
         Signal movingAverage = Signal.NONE;
-        if (maRelation >= epoch - 1) {
+        if (maRelation >= epoch - 1 && mas[0] > mas[mas.length - 1]) {
             movingAverage = Signal.DOWN;
             log.info("MovingAverage {}: {}", instrument.getDisplayName(), movingAverage);
-        } else if (maRelation <= -epoch + 1) {
+        } else if (maRelation <= -epoch + 1 && mas[0] < mas[mas.length - 1]) {
             movingAverage = Signal.UP;
             log.info("MovingAverage {}: {}", instrument.getDisplayName(), movingAverage);
         }
