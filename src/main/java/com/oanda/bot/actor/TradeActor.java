@@ -357,6 +357,10 @@ public class TradeActor extends UntypedAbstractActor {
             predictPrice = Signal.DOWN;
         }
 
+        if (Signal.NONE.equals(predictPrice)) {
+            return Signal.NONE;
+        }
+
         double price = accountService.getPrice(instrument).getAsk();
         double rsi = rsi(inClose);
         double adx = adx(inClose, inLow, inHigh);
