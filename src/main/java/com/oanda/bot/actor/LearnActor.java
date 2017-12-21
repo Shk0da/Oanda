@@ -1,6 +1,8 @@
 package com.oanda.bot.actor;
 
 import akka.actor.UntypedAbstractActor;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.oanda.bot.config.ActorConfig;
 import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
@@ -11,6 +13,7 @@ import com.oanda.bot.util.StockDataSetIterator;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Precision;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
@@ -37,6 +40,7 @@ public class LearnActor extends UntypedAbstractActor {
     private volatile MultiLayerNetwork neuralNetwork;
     private volatile DateTime lastLearn;
     private volatile Double lastPredict = 0D;
+    private volatile Double lastCandleClose = 0D;
 
     @Autowired
     private CandleRepository candleRepository;
@@ -63,7 +67,14 @@ public class LearnActor extends UntypedAbstractActor {
     public void onReceive(Object message) {
         if (Messages.WORK.equals(message) && neuralNetwork != null) {
             List<Candle> last = candleRepository.getLastCandles(instrument, step, VECTOR_SIZE);
+
+            // check vector
             if (last.size() < VECTOR_SIZE) return;
+
+            // check new data
+            double firstCandleClose = last.get(0).getCloseMid();
+            if (!(lastCandleClose == 0 || lastCandleClose == firstCandleClose)) return;
+            lastCandleClose = last.get(4).getCloseMid();
 
             INDArray input = Nd4j.create(new int[]{1, VECTOR_SIZE}, 'f');
             input.putScalar(new int[]{0, 0}, normalize(last.get(0).getCloseMid(), closeMin, closeMax));
@@ -75,7 +86,7 @@ public class LearnActor extends UntypedAbstractActor {
             INDArray output = neuralNetwork.rnnTimeStep(input);
 
             double percentage = 0.5;
-            double closePrice = deNormalize(output.getDouble(0), closeMin, closeMax);
+            double closePrice = Precision.round(deNormalize(output.getDouble(0), closeMin, closeMax), 5);
             if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
                 if (lastPredict > 0) {
                     Messages.Predict.Signal signal = Messages.Predict.Signal.NONE;
