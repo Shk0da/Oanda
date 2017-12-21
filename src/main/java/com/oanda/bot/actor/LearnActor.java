@@ -32,6 +32,8 @@ import static com.oanda.bot.util.StockDataSetIterator.*;
 @Component("LearnActor")
 public class LearnActor extends UntypedAbstractActor {
 
+    public enum Status {NOTHING, TRAINED, READY}
+
     private final Instrument instrument;
     private final Step step;
 
@@ -43,15 +45,9 @@ public class LearnActor extends UntypedAbstractActor {
     @Autowired
     private CandleRepository candleRepository;
 
-    public enum Status {NOTHING, TRAINED, READY}
-
     @Getter
     @Setter
     public volatile Status status = Status.NOTHING;
-
-    @Getter
-    @Setter
-    public volatile File model;
 
     private double closeMin = Double.MAX_VALUE;
     private double closeMax = Double.MIN_VALUE;
