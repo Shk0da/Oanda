@@ -54,7 +54,6 @@ public class StockDataSetIterator implements DataSetIterator {
         this.exampleLength = stockDataList.size();
         int split = (int) Math.round(stockDataList.size() * splitRatio);
         train = stockDataList.subList(0, split);
-        System.out.println("TRAIN SIZE: 0 - " + train.size());
 
         for (int i = 0; i < stockDataList.size(); i++) {
             Candle candle = stockDataList.get(i);
@@ -185,7 +184,6 @@ public class StockDataSetIterator implements DataSetIterator {
 
     public List<Pair<INDArray, Double>> generateTestDataSet(List<Candle> stockDataList) {
         List<Pair<INDArray, Double>> test = Lists.newArrayList();
-        System.out.println("TEST SIZE: " + train.size() + " - " + (train.size() + stockDataList.size()));
         for (int i = train.size() + VECTOR_SIZE; i < train.size() + stockDataList.size() - 5; i = i + 1) {
             INDArray input = Nd4j.create(new int[]{1, VECTOR_SIZE}, 'f');
             input.putScalar(new int[]{0, 0}, normalize(stockDataList.get(i - train.size() - 5).getCloseMid(), openMin, openMax));
