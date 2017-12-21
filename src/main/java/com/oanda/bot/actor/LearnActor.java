@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.oanda.bot.util.StockDataSetIterator.*;
 
@@ -32,6 +35,7 @@ public class LearnActor extends UntypedAbstractActor {
     private final Step step;
 
     private volatile MultiLayerNetwork neuralNetwork;
+    private volatile DateTime lastLearn;
     private volatile Double lastPredict = 0D;
 
     @Autowired
@@ -96,6 +100,11 @@ public class LearnActor extends UntypedAbstractActor {
 
         if (message instanceof Candle) {
             if (!status.equals(Status.TRAINED)) {
+                if (lastLearn != null
+                        && (DateTime.now().getMillis() - lastLearn.getMillis()) < TimeUnit.HOURS.toMillis(24)) {
+                    return;
+                }
+
                 setStatus(Status.TRAINED);
                 log.info("Start training {} {}", instrument.getDisplayName(), step.name());
 
@@ -105,6 +114,7 @@ public class LearnActor extends UntypedAbstractActor {
                 closeMax = iterator.getCloseMax();
                 neuralNetwork = LSTMNetwork.buildLstmNetworks(iterator);
 
+                lastLearn = DateTime.now();
                 log.info("Stop training {} {}", instrument.getDisplayName(), step.name());
                 setStatus(Status.READY);
             }
