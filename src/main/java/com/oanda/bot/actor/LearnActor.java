@@ -1,8 +1,6 @@
 package com.oanda.bot.actor;
 
 import akka.actor.UntypedAbstractActor;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.oanda.bot.config.ActorConfig;
 import com.oanda.bot.domain.Candle;
 import com.oanda.bot.domain.Instrument;
@@ -16,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.util.Precision;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.joda.time.DateTime;
-import org.joda.time.Days;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +82,7 @@ public class LearnActor extends UntypedAbstractActor {
 
             INDArray output = neuralNetwork.rnnTimeStep(input);
 
-            double percentage = 0.5;
+            double percentage = 0.05;
             double closePrice = Precision.round(deNormalize(output.getDouble(0), closeMin, closeMax), 5);
             if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
                 if (lastPredict > 0) {
