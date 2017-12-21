@@ -24,9 +24,15 @@ dependencies {
     compile("joda-time:joda-time")
     compile("com.google.guava:guava:23.0")
     compile("com.typesafe.akka:akka-actor_2.11:2.5.7")
-    compile("org.beykery:neuroph:2.92")
 
-    compile group: 'com.tictactec', name: 'ta-lib', version: '0.4.0'
+    compile("com.tictactec:ta-lib:0.4.0")
+    compile("org.nd4j:nd4j-api:0.9.1")
+    compile("org.nd4j:nd4j-native:0.9.1:windows-x86_64")
+    compile("org.nd4j:nd4j-native-platform:0.9.1")
+    compile("org.deeplearning4j:deeplearning4j-core:0.9.1")
+
+    compile("com.opencsv:opencsv:3.8")
+    compile("org.jfree:jfreechart:1.0.19")
 
     compile("com.github.paolodenti:telegram-logback:1.1.2")
 

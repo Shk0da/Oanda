@@ -118,7 +118,7 @@ public class TradeActor extends UntypedAbstractActor {
 
         if (message instanceof Messages.Predict) {
             log.info("Current {}: {}", instrument.getDisplayName(), getCurrentRate().getMid().getC());
-            log.info("Predict {}: {}", instrument.getDisplayName(), ((Messages.Predict) message).getPrice());
+            log.info("Predict {}: {}", instrument.getDisplayName(), ((Messages.Predict) message).getTrend());
             trade((Messages.Predict) message);
         }
 
@@ -350,7 +350,14 @@ public class TradeActor extends UntypedAbstractActor {
             inClose[i] = candle.getCloseMid();
         }
 
-        double predictPrice = predict.getPrice();
+        Signal predictPrice = Signal.NONE;
+        if (Messages.Predict.Signal.UP.equals(predict.getTrend())) {
+            predictPrice = Signal.UP;
+        } else if (Messages.Predict.Signal.DOWN.equals(predict.getTrend())) {
+            predictPrice = Signal.DOWN;
+        }
+
+        double price = accountService.getPrice(instrument).getAsk();
         double rsi = rsi(inClose);
         double adx = adx(inClose, inLow, inHigh);
         double white = movingAverageWhite(inClose);
@@ -361,11 +368,11 @@ public class TradeActor extends UntypedAbstractActor {
         boolean tup = rsi > 59 && adx > 25;
 
         Signal signal = Signal.NONE;
-        if (predictPrice <= imalow && tdwn && predictPrice <= white && predictPrice >= black && black < white) {
+        if (Signal.DOWN.equals(predictPrice) && tdwn && price <= imalow && price <= white && price >= black && black < white) {
             signal = Signal.DOWN;
         }
 
-        if (predictPrice > imahigh && tup && predictPrice > white && predictPrice < black && black > white) {
+        if (Signal.UP.equals(predictPrice) && tup && price > imahigh && price > white && price < black && black > white) {
             signal = Signal.UP;
         }
 

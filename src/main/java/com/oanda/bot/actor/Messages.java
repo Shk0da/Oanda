@@ -36,6 +36,7 @@ public enum Messages {
     @Data
     @AllArgsConstructor
     public static class Predict {
-        private double price;
+        public enum Signal {UP, DOWN, NONE}
+        private Signal trend;
     }
 }
