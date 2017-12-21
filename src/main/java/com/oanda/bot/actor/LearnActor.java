@@ -17,6 +17,7 @@ import org.joda.time.DateTime;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -55,6 +56,9 @@ public class LearnActor extends UntypedAbstractActor {
     private double closeMin = Double.MAX_VALUE;
     private double closeMax = Double.MIN_VALUE;
 
+    @Value("${oandabot.sensitivity.trend}")
+    private Double sensitivityTrend;
+
     public LearnActor(Instrument instrument, Step step) {
         this.instrument = instrument;
         this.step = step;
@@ -81,17 +85,15 @@ public class LearnActor extends UntypedAbstractActor {
             input.putScalar(new int[]{0, 4}, normalize(last.get(4).getCloseMid(), closeMin, closeMax));
 
             INDArray output = neuralNetwork.rnnTimeStep(input);
-
-            double percentage = 0.01;
             double closePrice = Precision.round(deNormalize(output.getDouble(0), closeMin, closeMax), 5);
             if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
                 if (lastPredict > 0) {
                     Messages.Predict.Signal signal = Messages.Predict.Signal.NONE;
-                    if (closePrice > lastPredict && (closePrice / (lastPredict / 100) - 100) > percentage) {
+                    if (closePrice > lastPredict && (closePrice / (lastPredict / 100) - 100) > sensitivityTrend) {
                         signal = Messages.Predict.Signal.UP;
                     }
 
-                    if (closePrice < lastPredict && (lastPredict / (closePrice / 100) - 100) > percentage) {
+                    if (closePrice < lastPredict && (lastPredict / (closePrice / 100) - 100) > sensitivityTrend) {
                         signal = Messages.Predict.Signal.DOWN;
                     }
 

@@ -75,6 +75,9 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.martingale.enable}")
     private Boolean martingaleEnable;
 
+    @Value("${oandabot.additionalfilters.enable}")
+    private Boolean additionalFiltersEnable;
+
     @Getter
     @Setter
     private Double lastProfit = 0D;
@@ -359,6 +362,10 @@ public class TradeActor extends UntypedAbstractActor {
 
         if (Signal.NONE.equals(predictPrice)) {
             return Signal.NONE;
+        }
+
+        if (!additionalFiltersEnable) {
+            return predictPrice;
         }
 
         double price = accountService.getPrice(instrument).getAsk();
