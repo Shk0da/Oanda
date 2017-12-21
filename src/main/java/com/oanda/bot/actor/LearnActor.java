@@ -69,9 +69,9 @@ public class LearnActor extends UntypedAbstractActor {
             if (last.size() < VECTOR_SIZE) return;
 
             // check new data
-            double firstCandleClose = last.get(0).getCloseMid();
-            if (!(lastCandleClose == 0 || lastCandleClose == firstCandleClose)) return;
-            lastCandleClose = last.get(4).getCloseMid();
+            double vectorClose = last.get(4).getCloseMid();
+            if (lastCandleClose > 0 && lastCandleClose == vectorClose) return;
+            lastCandleClose = vectorClose;
 
             INDArray input = Nd4j.create(new int[]{1, VECTOR_SIZE}, 'f');
             input.putScalar(new int[]{0, 0}, normalize(last.get(0).getCloseMid(), closeMin, closeMax));
@@ -82,7 +82,7 @@ public class LearnActor extends UntypedAbstractActor {
 
             INDArray output = neuralNetwork.rnnTimeStep(input);
 
-            double percentage = 0.05;
+            double percentage = 0.01;
             double closePrice = Precision.round(deNormalize(output.getDouble(0), closeMin, closeMax), 5);
             if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
                 if (lastPredict > 0) {
