@@ -83,9 +83,11 @@ public class LearnActor extends UntypedAbstractActor {
                         signal = Messages.Predict.Signal.DOWN;
                     }
 
-                    getContext()
-                            .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
-                            .tell(new Messages.Predict(signal), self());
+                    if (!Messages.Predict.Signal.NONE.equals(signal)) {
+                        getContext()
+                                .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
+                                .tell(new Messages.Predict(signal), self());
+                    }
                 }
 
                 lastPredict = closePrice;
