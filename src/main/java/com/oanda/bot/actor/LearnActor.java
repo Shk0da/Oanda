@@ -70,7 +70,7 @@ public class LearnActor extends UntypedAbstractActor {
 
             INDArray output = neuralNetwork.rnnTimeStep(input);
 
-            int percentage = 5;
+            double percentage = 0.5;
             double closePrice = deNormalize(output.getDouble(0), closeMin, closeMax);
             if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
                 if (lastPredict > 0) {
