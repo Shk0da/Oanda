@@ -54,6 +54,9 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.stoploss}")
     private Double stopLoss;
 
+    @Value("${oandabot.satisfactorilyprofit}")
+    private Double satisfactorilyProfit;
+
     @Value("${oandabot.spread.max}")
     private Double spreadMax;
 
@@ -152,7 +155,7 @@ public class TradeActor extends UntypedAbstractActor {
         double midPrice = (price.getBid() + price.getAsk()) / 2;
         double profit = getProfit();
 
-        if (profit > 0 && midPrice > satisfactorilyTP) {
+        if ((profit > 0 && midPrice > satisfactorilyTP) || (profit >= satisfactorilyProfit)) {
             lastProfit = profit;
             log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
             accountService.closeOrdersAndTrades(instrument);
