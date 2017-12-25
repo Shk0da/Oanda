@@ -14,6 +14,7 @@ import com.tictactec.ta.lib.RetCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Precision;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,7 +154,7 @@ public class TradeActor extends UntypedAbstractActor {
 
         double satisfactorilyTP = (currentTP + current.getPrice()) / 2;
         double midPrice = (price.getBid() + price.getAsk()) / 2;
-        double profit = getProfit();
+        double profit = Precision.round(getProfit(), 5);
 
         if ((profit > 0 && midPrice > satisfactorilyTP) || (profit >= satisfactorilyProfit)) {
             lastProfit = profit;
@@ -256,7 +257,7 @@ public class TradeActor extends UntypedAbstractActor {
             accountService.closeOrdersAndTrades(instrument);
         } else {
             setCurrentOrder(order);
-            log.warn("Created: {}", order);
+            log.info("Created: {}", order);
         }
     }
 
