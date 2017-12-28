@@ -20,6 +20,7 @@ import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -55,6 +56,12 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.stoploss}")
     private Double stopLoss;
 
+    @Value("${oandabot.takeprofit.enable}")
+    private Boolean takeProfitEnable;
+
+    @Value("${oandabot.stoploss.enable}")
+    private Boolean stopLossEnable;
+
     @Value("${oandabot.satisfactorilyprofit}")
     private Double satisfactorilyProfit;
 
@@ -66,6 +73,9 @@ public class TradeActor extends UntypedAbstractActor {
 
     @Value("${oandabot.balance.risk}")
     private Double balanceRisk;
+
+    @Value("${oandabot.pricebound.enable}")
+    private Boolean priceboundEnable;
 
     @Value("${oandabot.lossorders.close}")
     private Boolean lossOrdersClose;
@@ -81,6 +91,9 @@ public class TradeActor extends UntypedAbstractActor {
 
     @Value("${oandabot.additionalfilters.enable}")
     private Boolean additionalFiltersEnable;
+
+    @Value("${oandabot.additionalfilters.rsiadx.enable}")
+    private Boolean additionalFiltersRsiAdxEnable;
 
     @Getter
     @Setter
@@ -136,7 +149,8 @@ public class TradeActor extends UntypedAbstractActor {
         log.warn("Balance: {}", accountService.getAccountDetails().getBalance());
     }
 
-    private void checkProfit() {
+    @Async
+    protected void checkProfit() {
         Order current = getCurrentOrder();
         if (current == null || current.getPrice() == null) return;
 
@@ -208,18 +222,37 @@ public class TradeActor extends UntypedAbstractActor {
         if (price.getSpread() <= spreadMax) {
             Order newOrder = getCurrentOrder();
             if (Signal.UP.equals(signal)) {
-                newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
-                newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
-                newOrder.setPrice(getOrderPrice(OrderType.BUY));
-                newOrder.setPriceBound(getOrderPrice(OrderType.BUY));
+                if (takeProfitEnable) {
+                    newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
+
+                }
+
+                if (stopLossEnable) {
+                    newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
+                }
+
+                if (priceboundEnable) {
+                    newOrder.setPrice(getOrderPrice(OrderType.BUY));
+                    newOrder.setPriceBound(getOrderPrice(OrderType.BUY));
+                }
+
                 newOrder.setUnits(getMaxUnits(OrderType.BUY));
             }
 
             if (Signal.DOWN.equals(signal)) {
-                newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
-                newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
-                newOrder.setPrice(getOrderPrice(OrderType.SELL));
-                newOrder.setPriceBound(getOrderPrice(OrderType.SELL));
+                if (takeProfitEnable) {
+                    newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
+                }
+
+                if (stopLossEnable) {
+                    newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
+                }
+
+                if (priceboundEnable) {
+                    newOrder.setPrice(getOrderPrice(OrderType.SELL));
+                    newOrder.setPriceBound(getOrderPrice(OrderType.SELL));
+                }
+
                 newOrder.setUnits(getMaxUnits(OrderType.SELL));
             }
 
@@ -379,8 +412,8 @@ public class TradeActor extends UntypedAbstractActor {
         double black = movingAverageBlack(inClose);
         double imalow = movingAverageLowHigh(inLow);
         double imahigh = movingAverageLowHigh(inHigh);
-        boolean tdwn = rsi < 39 && adx > 19;
-        boolean tup = rsi > 59 && adx > 25;
+        boolean tdwn = (rsi < 39 && adx > 19) || (!additionalFiltersRsiAdxEnable);
+        boolean tup = (rsi > 59 && adx > 25) || (!additionalFiltersRsiAdxEnable);
 
         Signal signal = Signal.NONE;
         if (Signal.DOWN.equals(predictPrice) && tdwn && price <= imalow && price <= white && price >= black && black < white) {
