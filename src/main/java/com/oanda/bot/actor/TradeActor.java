@@ -151,6 +151,12 @@ public class TradeActor extends UntypedAbstractActor {
 
     @Async
     protected void checkProfit() {
+        double profit = Precision.round(getProfit(), 5);
+        if (profit >= satisfactorilyProfit) {
+            toTakeProfit(profit);
+            return;
+        }
+
         Order current = getCurrentOrder();
         if (current == null || current.getPrice() == null) return;
 
@@ -168,16 +174,18 @@ public class TradeActor extends UntypedAbstractActor {
 
         double satisfactorilyTP = (currentTP + current.getPrice()) / 2;
         double midPrice = (price.getBid() + price.getAsk()) / 2;
-        double profit = Precision.round(getProfit(), 5);
-
-        if ((profit > 0 && midPrice > satisfactorilyTP) || (profit >= satisfactorilyProfit)) {
-            lastProfit = profit;
-            log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
-            accountService.closeOrdersAndTrades(instrument);
-            setCurrentOrder(null);
-            log.info("{}: Close orders and trades", instrument.getDisplayName());
-            balanceInfo();
+        if (profit > 0 && midPrice > satisfactorilyTP) {
+            toTakeProfit(profit);
         }
+    }
+
+    private void toTakeProfit(double profit) {
+        lastProfit = profit;
+        log.warn("Profit {}: {}", instrument.getDisplayName(), profit);
+        accountService.closeOrdersAndTrades(instrument);
+        setCurrentOrder(null);
+        log.info("{}: Close orders and trades", instrument.getDisplayName());
+        balanceInfo();
     }
 
     private void trade(final Messages.Predict predict) {
