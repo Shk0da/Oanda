@@ -54,6 +54,9 @@ public class LearnActor extends UntypedAbstractActor {
     @Value("${oandabot.sensitivity.trend}")
     private Double sensitivityTrend;
 
+    @Value("${oandabot.learn.interval}")
+    private Integer learnInterval;
+
     public LearnActor(Instrument instrument, Step step) {
         this.instrument = instrument;
         this.step = step;
@@ -106,7 +109,7 @@ public class LearnActor extends UntypedAbstractActor {
         if (message instanceof Candle) {
             if (!status.equals(Status.TRAINED)) {
                 if (lastLearn != null
-                        && (DateTime.now().getMillis() - lastLearn.getMillis()) < TimeUnit.HOURS.toMillis(24)) {
+                        && (DateTime.now().getMillis() - lastLearn.getMillis()) < TimeUnit.MINUTES.toMillis(learnInterval)) {
                     return;
                 }
 
