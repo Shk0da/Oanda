@@ -230,7 +230,7 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         Price price = accountService.getPrice(instrument);
-        if (price.getSpread() <= spreadMax) {
+        if (price.getSpread() <= spreadMax * instrument.getPip()) {
             Order newOrder = getCurrentOrder();
             if (Signal.UP.equals(signal)) {
                 if (takeProfitEnable) {
