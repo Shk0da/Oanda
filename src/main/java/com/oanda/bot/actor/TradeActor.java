@@ -427,11 +427,13 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         Signal signal = Signal.NONE;
-        if (Signal.DOWN.equals(predictPrice) && trend && white < black && price < black && price > white) {
+        boolean maDown = (white < black && price < black && price > white) || (price < white && white < black);
+        if (Signal.DOWN.equals(predictPrice) && trend && maDown) {
             signal = Signal.DOWN;
         }
 
-        if (Signal.UP.equals(predictPrice) && trend && white > black && price > black && price < white) {
+        boolean maUp = (white > black && price > black && price < white) || (price > white && white > black);
+        if (Signal.UP.equals(predictPrice) && trend && maUp) {
             signal = Signal.UP;
         }
 
