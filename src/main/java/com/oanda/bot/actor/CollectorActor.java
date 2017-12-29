@@ -46,27 +46,31 @@ public class CollectorActor extends UntypedAbstractActor {
 
     @Override
     public void onReceive(Object message) {
-        if (message instanceof Messages.WorkTime) {
-            setWorkTime(((Messages.WorkTime) message).getIs());
-            context().parent().forward(message, context());
-        }
-
-        if (!isWorkTime()) return;
-
-        if (Messages.WORK.equals(message)) {
-            List<Candle> candles = accountService.getCandles(instrument, step, getLastCollect())
-                    .getCandles()
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
-            if (!candles.isEmpty()) {
-                log.info("Candle list size: {}", candles.size());
-                candleRepository.addCandles(instrument, step, candles);
-                getContext()
-                        .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
-                        .tell(Iterables.getLast(candles), sender());
+        try {
+            if (message instanceof Messages.WorkTime) {
+                setWorkTime(((Messages.WorkTime) message).getIs());
+                context().parent().forward(message, context());
             }
+
+            if (!isWorkTime()) return;
+
+            if (Messages.WORK.equals(message)) {
+                List<Candle> candles = accountService.getCandles(instrument, step, getLastCollect())
+                        .getCandles()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                if (!candles.isEmpty()) {
+                    log.info("Candle list size: {}", candles.size());
+                    candleRepository.addCandles(instrument, step, candles);
+                    getContext()
+                            .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())
+                            .tell(Iterables.getLast(candles), sender());
+                }
+            }
+        } catch (Exception ex) {
+            log.error(ex.getMessage());
         }
 
         unhandled(message);

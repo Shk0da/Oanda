@@ -117,29 +117,33 @@ public class TradeActor extends UntypedAbstractActor {
 
     @Override
     public void onReceive(Object message) {
-        if (message instanceof Messages.WorkTime) {
-            setWorkTime(((Messages.WorkTime) message).getIs());
-            log.info("Now workTime is {}", isWorkTime());
-        }
+        try {
+            if (message instanceof Messages.WorkTime) {
+                setWorkTime(((Messages.WorkTime) message).getIs());
+                log.info("Now workTime is {}", isWorkTime());
+            }
 
-        if (!isActive()) return;
+            if (!isActive()) return;
 
-        if (Messages.WORK.equals(message)) {
-            checkProfit();
-        }
+            if (Messages.WORK.equals(message)) {
+                checkProfit();
+            }
 
-        if (message instanceof Candle) {
-            setCurrentRate(((Candle) message));
-            log.info("CurrentRate: {}", getCurrentRate());
-            getContext()
-                    .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument.getInstrument() + "_" + step.name())
-                    .tell(message, self());
-        }
+            if (message instanceof Candle) {
+                setCurrentRate(((Candle) message));
+                log.info("CurrentRate: {}", getCurrentRate());
+                getContext()
+                        .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument.getInstrument() + "_" + step.name())
+                        .tell(message, self());
+            }
 
-        if (message instanceof Messages.Predict) {
-            log.info("Current {}: {}", instrument.getDisplayName(), getCurrentRate().getMid().getC());
-            log.info("Predict {}: {}", instrument.getDisplayName(), ((Messages.Predict) message).getTrend());
-            trade((Messages.Predict) message);
+            if (message instanceof Messages.Predict) {
+                log.info("Current {}: {}", instrument.getDisplayName(), getCurrentRate().getMid().getC());
+                log.info("Predict {}: {}", instrument.getDisplayName(), ((Messages.Predict) message).getTrend());
+                trade((Messages.Predict) message);
+            }
+        } catch (Exception ex) {
+            log.error(ex.getMessage());
         }
 
         unhandled(message);
