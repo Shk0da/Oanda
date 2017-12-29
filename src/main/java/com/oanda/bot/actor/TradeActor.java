@@ -92,8 +92,8 @@ public class TradeActor extends UntypedAbstractActor {
     @Value("${oandabot.additionalfilters.enable}")
     private Boolean additionalFiltersEnable;
 
-    @Value("${oandabot.additionalfilters.rsiadx.enable}")
-    private Boolean additionalFiltersRsiAdxEnable;
+    @Value("${oandabot.additionalfilters.adx.enable}")
+    private Boolean additionalFiltersAdxEnable;
 
     @Getter
     @Setter
@@ -420,25 +420,19 @@ public class TradeActor extends UntypedAbstractActor {
         double price = accountService.getPrice(instrument).getAsk();
         double white = movingAverageWhite(inClose);
         double black = movingAverageBlack(inClose);
-        double imalow = movingAverageLowHigh(inLow);
-        double imahigh = movingAverageLowHigh(inHigh);
 
-        boolean tdwn = true;
-        boolean tup = true;
-        if (additionalFiltersRsiAdxEnable) {
-            double rsi = rsi(inClose);
+        boolean trend = true;
+        if (additionalFiltersAdxEnable) {
             double adx = adx(inClose, inLow, inHigh);
-            tdwn = rsi < 39 && adx > 19;
-            tup = rsi > 59 && adx > 25;
-
+            trend = adx >= 20;
         }
 
         Signal signal = Signal.NONE;
-        if (Signal.DOWN.equals(predictPrice) && tdwn && price <= imalow && price <= white && price >= black && black < white) {
+        if (Signal.DOWN.equals(predictPrice) && trend && white < black && price < black && price > white) {
             signal = Signal.DOWN;
         }
 
-        if (Signal.UP.equals(predictPrice) && tup && price > imahigh && price > white && price < black && black > white) {
+        if (Signal.UP.equals(predictPrice) && trend && white > black && price > black && price < white) {
             signal = Signal.UP;
         }
 
@@ -477,21 +471,6 @@ public class TradeActor extends UntypedAbstractActor {
 
         log.info("RSI {}: {}", instrument.getDisplayName(), rsi);
         return rsi;
-    }
-
-    private double movingAverageLowHigh(double[] in) {
-        int period = 3;
-
-        double[] out = new double[in.length];
-        MInteger begin = new MInteger();
-        MInteger length = new MInteger();
-        RetCode retCode = talib.movingAverage(
-                0, in.length - 1, in, period, MAType.Wma, begin, length, out
-        );
-        double ma = RetCode.Success.equals(retCode) ? out[length.value - 1] : 0;
-
-        log.info("MovingAverageLowHigh {}: {}", instrument.getDisplayName(), ma);
-        return ma;
     }
 
     private double movingAverageBlack(double[] inClose) {
