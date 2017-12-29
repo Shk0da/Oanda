@@ -418,14 +418,20 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         double price = accountService.getPrice(instrument).getAsk();
-        double rsi = rsi(inClose);
-        double adx = adx(inClose, inLow, inHigh);
         double white = movingAverageWhite(inClose);
         double black = movingAverageBlack(inClose);
         double imalow = movingAverageLowHigh(inLow);
         double imahigh = movingAverageLowHigh(inHigh);
-        boolean tdwn = (rsi < 39 && adx > 19) || (!additionalFiltersRsiAdxEnable);
-        boolean tup = (rsi > 59 && adx > 25) || (!additionalFiltersRsiAdxEnable);
+
+        boolean tdwn = true;
+        boolean tup = true;
+        if (additionalFiltersRsiAdxEnable) {
+            double rsi = rsi(inClose);
+            double adx = adx(inClose, inLow, inHigh);
+            tdwn = rsi < 39 && adx > 19;
+            tup = rsi > 59 && adx > 25;
+
+        }
 
         Signal signal = Signal.NONE;
         if (Signal.DOWN.equals(predictPrice) && tdwn && price <= imalow && price <= white && price >= black && black < white) {
