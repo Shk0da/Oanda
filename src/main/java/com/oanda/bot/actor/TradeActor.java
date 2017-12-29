@@ -8,7 +8,6 @@ import com.oanda.bot.repository.CandleRepository;
 import com.oanda.bot.service.AccountService;
 import com.oanda.bot.util.DateTimeUtil;
 import com.tictactec.ta.lib.Core;
-import com.tictactec.ta.lib.MAType;
 import com.tictactec.ta.lib.MInteger;
 import com.tictactec.ta.lib.RetCode;
 import lombok.Getter;
@@ -456,21 +455,6 @@ public class TradeActor extends UntypedAbstractActor {
 
         log.info("ADX {}: {}", instrument.getDisplayName(), adx);
         return adx;
-    }
-
-    private double rsi(double[] in) {
-        int period = 14;
-
-        double[] out = new double[in.length];
-        MInteger begin = new MInteger();
-        MInteger length = new MInteger();
-        RetCode retCode = talib.rsi(
-                0, in.length - 1, in, period, begin, length, out
-        );
-        double rsi = RetCode.Success.equals(retCode) ? out[length.value - 1] : 0;
-
-        log.info("RSI {}: {}", instrument.getDisplayName(), rsi);
-        return rsi;
     }
 
     private double movingAverageBlack(double[] inClose) {
