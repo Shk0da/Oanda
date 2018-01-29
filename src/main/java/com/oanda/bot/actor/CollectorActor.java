@@ -62,7 +62,7 @@ public class CollectorActor extends UntypedAbstractActor {
                         .collect(Collectors.toList());
 
                 if (!candles.isEmpty()) {
-                    log.info("Candle list size: {}", candles.size());
+                    log.info("Candle list size {} {}: {}", instrument, step, candles.size());
                     candleRepository.addCandles(instrument, step, candles);
                     getContext()
                             .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument.getInstrument() + "_" + step.name())

@@ -390,17 +390,6 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private Signal signal(Messages.Predict predict) {
-        List<Candle> dayCandles = candleRepository.getLastCandles(instrument, step, 127);
-        double[] inHigh = new double[dayCandles.size()];
-        double[] inLow = new double[dayCandles.size()];
-        double[] inClose = new double[dayCandles.size()];
-        for (int i = 0; i < dayCandles.size(); i++) {
-            Candle candle = dayCandles.get(i);
-            inHigh[i] = candle.getHighMid();
-            inLow[i] = candle.getLowMid();
-            inClose[i] = candle.getCloseMid();
-        }
-
         Signal predictPrice = Signal.NONE;
         if (Messages.Predict.Signal.UP.equals(predict.getTrend())) {
             predictPrice = Signal.UP;
@@ -414,6 +403,17 @@ public class TradeActor extends UntypedAbstractActor {
 
         if (!additionalFiltersEnable) {
             return predictPrice;
+        }
+
+        List<Candle> dayCandles = candleRepository.getLastCandles(instrument, Step.D, 127);
+        double[] inHigh = new double[dayCandles.size()];
+        double[] inLow = new double[dayCandles.size()];
+        double[] inClose = new double[dayCandles.size()];
+        for (int i = 0; i < dayCandles.size(); i++) {
+            Candle candle = dayCandles.get(i);
+            inHigh[i] = candle.getHighMid();
+            inLow[i] = candle.getLowMid();
+            inClose[i] = candle.getCloseMid();
         }
 
         double price = accountService.getPrice(instrument).getAsk();
