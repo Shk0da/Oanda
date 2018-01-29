@@ -130,7 +130,7 @@ public class TradeActor extends UntypedAbstractActor {
 
             if (message instanceof Candle) {
                 setCurrentRate(((Candle) message));
-                log.info("CurrentRate: {}", getCurrentRate());
+                log.info("CurrentRate {}: {}", instrument, getCurrentRate().getMid().getO());
                 getContext()
                         .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument.getInstrument() + "_" + step.name())
                         .tell(message, self());
@@ -235,7 +235,6 @@ public class TradeActor extends UntypedAbstractActor {
             if (Signal.UP.equals(signal)) {
                 if (takeProfitEnable) {
                     newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
-
                 }
 
                 if (stopLossEnable) {
