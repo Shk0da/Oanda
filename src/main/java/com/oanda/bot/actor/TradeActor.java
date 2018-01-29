@@ -137,7 +137,6 @@ public class TradeActor extends UntypedAbstractActor {
             }
 
             if (message instanceof Messages.Predict) {
-                log.info("Current {}: {}", instrument.getDisplayName(), getCurrentRate().getMid().getC());
                 log.info("Predict {}: {}", instrument.getDisplayName(), ((Messages.Predict) message).getTrend());
                 trade((Messages.Predict) message);
             }
@@ -404,7 +403,7 @@ public class TradeActor extends UntypedAbstractActor {
             return predictPrice;
         }
 
-        List<Candle> dayCandles = candleRepository.getLastCandles(instrument, Step.D, 127);
+        List<Candle> dayCandles = candleRepository.getLastCandles(instrument, Step.H1, 127);
         double[] inHigh = new double[dayCandles.size()];
         double[] inLow = new double[dayCandles.size()];
         double[] inClose = new double[dayCandles.size()];

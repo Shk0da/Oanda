@@ -56,9 +56,9 @@ public class ActorConfig {
                     system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, step), "CollectorActor_" + instrument + "_" + step.name());
                     log.info("Create: CollectorActor_" + instrument + "_" + step.name());
 
-                    if (additionalFiltersEnable && !Step.D.equals(step)) {
-                        system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, Step.D), "CollectorActor_" + instrument + "_D");
-                        log.info("Create: CollectorActor_" + instrument + "_D");
+                    if (additionalFiltersEnable && !Step.H1.equals(step)) {
+                        system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, Step.H1), "CollectorActor_" + instrument + "_H1");
+                        log.info("Create: CollectorActor_" + instrument + "_H1");
                     }
 
                     system.actorOf(Props.create(SpringDIActor.class, TradeActor.class, instrument, step), "TradeActor_" + instrument + "_" + step.name());
