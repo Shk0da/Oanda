@@ -130,7 +130,7 @@ public class TradeActor extends UntypedAbstractActor {
 
             if (message instanceof Candle) {
                 setCurrentRate(((Candle) message));
-                log.info("CurrentRate {}: {}", instrument, getCurrentRate().getMid().getO());
+                log.info("CurrentRate {}: {}", instrument, getCurrentRate().getCloseMid());
                 getContext()
                         .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument.getInstrument() + "_" + step.name())
                         .tell(message, self());
