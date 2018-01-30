@@ -403,12 +403,12 @@ public class TradeActor extends UntypedAbstractActor {
             return predictPrice;
         }
 
-        List<Candle> dayCandles = candleRepository.getLastCandles(instrument, Step.H1, 127);
-        double[] inHigh = new double[dayCandles.size()];
-        double[] inLow = new double[dayCandles.size()];
-        double[] inClose = new double[dayCandles.size()];
-        for (int i = 0; i < dayCandles.size(); i++) {
-            Candle candle = dayCandles.get(i);
+        List<Candle> hourCandles = candleRepository.getLastCandles(instrument, Step.H1, 127);
+        double[] inHigh = new double[hourCandles.size()];
+        double[] inLow = new double[hourCandles.size()];
+        double[] inClose = new double[hourCandles.size()];
+        for (int i = 0; i < hourCandles.size(); i++) {
+            Candle candle = hourCandles.get(i);
             inHigh[i] = candle.getHighMid();
             inLow[i] = candle.getLowMid();
             inClose[i] = candle.getCloseMid();
@@ -425,14 +425,33 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         Signal signal = Signal.NONE;
-        boolean maDown = (white < black && price < black && price > white) || (price < white && white < black);
+        boolean maDown = black > white && price < white;
         if (Signal.DOWN.equals(predictPrice) && trend && maDown) {
             signal = Signal.DOWN;
         }
 
-        boolean maUp = (white > black && price > black && price < white) || (price > white && white > black);
+        boolean maUp = white > black && price > white;
         if (Signal.UP.equals(predictPrice) && trend && maUp) {
             signal = Signal.UP;
+        }
+
+        if (((black > white && price < black && price > white) || (white > black && price > black && price < white)) && trend) {
+            List<Candle> currentCandles = candleRepository.getLastCandles(instrument, step, 127);
+            double[] inCloseCurrent = new double[currentCandles.size()];
+            for (int i = 0; i < currentCandles.size(); i++) {
+                inCloseCurrent[i] = currentCandles.get(i).getCloseMid();
+            }
+
+            double whiteCurrent = movingAverageWhite(inCloseCurrent);
+            double blackCurrent = movingAverageBlack(inCloseCurrent);
+
+            if (Signal.UP.equals(predictPrice) && whiteCurrent > blackCurrent && price > whiteCurrent) {
+                signal = Signal.UP;
+            }
+
+            if (Signal.DOWN.equals(predictPrice) && blackCurrent > whiteCurrent && price < whiteCurrent) {
+                signal = Signal.DOWN;
+            }
         }
 
         return signal;
