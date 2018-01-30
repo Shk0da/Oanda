@@ -1,8 +1,14 @@
+.gradle/
+build/
+logs/
 target/
+out/
 !.mvn/wrapper/maven-wrapper.jar
+!.gradle/wrapper/gradle-wrapper.jar
 *.war
 *.jar
 *.nnet
+*.log
 
 ### STS ###
 .apt_generated

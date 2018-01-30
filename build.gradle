@@ -1,0 +1,56 @@
+description 'Oanda trading Bot'
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'build-dashboard'
+
+jar {
+    baseName = 'oanda'
+    version = '2.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter")
+    compile("org.springframework.boot:spring-boot-starter-social-twitter")
+    compile("joda-time:joda-time")
+    compile("com.google.guava:guava:23.0")
+    compile("com.typesafe.akka:akka-actor_2.11:2.5.7")
+
+    compile("com.tictactec:ta-lib:0.4.0")
+    compile("org.nd4j:nd4j-api:0.9.1")
+    compile("org.nd4j:nd4j-native:0.9.1:windows-x86_64")
+    compile("org.nd4j:nd4j-native-platform:0.9.1")
+    compile("org.deeplearning4j:deeplearning4j-core:0.9.1")
+
+    compile("com.opencsv:opencsv:3.8")
+    compile("org.jfree:jfreechart:1.0.19")
+
+    compile("com.github.paolodenti:telegram-logback:1.1.2")
+
+    compileOnly("org.projectlombok:lombok")
+
+    testCompile("junit:junit")
+}
+
+buildscript {
+
+    apply plugin: 'project-report'
+    apply plugin: 'build-dashboard'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.8.RELEASE")
+    }
+}

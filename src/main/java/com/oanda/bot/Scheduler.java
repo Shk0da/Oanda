@@ -1,154 +1,70 @@
 package com.oanda.bot;
 
 import akka.actor.ActorSystem;
-import com.oanda.bot.constants.Constants;
-import com.oanda.bot.constants.Event;
-import com.oanda.bot.dao.MainDao;
-import com.oanda.bot.model.Accounts;
-import com.oanda.bot.service.AccountService;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import org.joda.time.DateTime;
-import org.quartz.CronExpression;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.oanda.bot.actor.Messages;
+import com.oanda.bot.config.ActorConfig;
+import com.oanda.bot.domain.Step;
+import com.oanda.bot.repository.InstrumentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import java.util.Date;
+import java.util.Arrays;
 
+@Slf4j
+@EnableScheduling
 @Component(value = "scheduler")
-public class Scheduler implements Constants {
+public class Scheduler {
 
-	protected static final Config config = ConfigFactory.load().getConfig("main");
-	private static final Logger log = LoggerFactory.getLogger(Scheduler.class);
-	private ActorSystem actorSystem;
-	private boolean active = false;
+    @Autowired
+    private ActorSystem actorSystem;
 
-	private boolean forceStartOfDay = true;
-	
-	@Autowired 
-	private TaskScheduler taskScheduler;
+    @Autowired
+    private InstrumentRepository instrumentRepository;
 
-	@Autowired
-	private AccountService accountService;
+    @Scheduled(cron = "${oandabot.scheduler.candle-collect.cron}")
+    public void fireCollect() {
+        if (actorSystem == null) return;
 
-	@Autowired
-	private MainDao mainDao;
+        instrumentRepository.getAllInstruments().forEach(instrument ->
+                Arrays.asList(Step.values()).forEach(step -> {
+                    actorSystem
+                            .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "CollectorActor_" + instrument + "_" + step.name())
+                            .tell(Messages.WORK, actorSystem.guardian());
 
-	@Autowired
-	public Scheduler(ActorSystem actorSystem) {
-		this.actorSystem = actorSystem;
-	}
+                    actorSystem
+                            .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument + "_" + step.name())
+                            .tell(Messages.WORK, actorSystem.guardian());
+                })
+        );
+    }
 
-	@Scheduled(cron = "${main.scheduler.trade-check.cron}")
-	public void fireCheckTrades() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR)
-				.tell(Event.CHECK_TRADES_ORDERS, actorSystem.guardian());
-	}
+    @Scheduled(cron = "${oandabot.scheduler.trade-check.cron}")
+    public void fireTrade() {
+        if (actorSystem == null) return;
 
-	@Scheduled(cron = "${main.scheduler.candle-collect.cron}")
-	public void fireCollectCandles() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR).tell(Event.COLLECT_CANDLES,
-				actorSystem.guardian());
-	}
+        instrumentRepository.getAllInstruments().forEach(instrument ->
+                Arrays.asList(Step.values()).forEach(step ->
+                        actorSystem
+                                .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "TradeActor_" + instrument + "_" + step.name())
+                                .tell(Messages.WORK, actorSystem.guardian())
+                )
+        );
+    }
 
-	@Scheduled(cron = "${main.scheduler.pivot-collect.cron}")
-	public void fireCollectPivot() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.COLLECTOR).tell(Event.COLLECT_PIVOT,
-				actorSystem.guardian());
-	}
+    @Scheduled(cron = "${oandabot.scheduler.start-work.cron}")
+    public void startWork() {
+        if (actorSystem == null) return;
 
-	@PostConstruct
-	public void fireInitialCollection() {
-		taskScheduler.schedule(() -> {
+        actorSystem.actorSelection(ActorConfig.ACTOR_PATH_HEAD + "*/*").tell(new Messages.WorkTime(true), actorSystem.guardian());
+    }
 
-			forceStartOfDay = isNotFalse("forcestartofday");
-			active = isTrue("autostart") || forceStartOfDay;
-			if (active) {
-				log.info("Autostart set to TRUE. Start collecting candles...");
-			}
-			try {
-				CronExpression expression = new CronExpression(
-						forceStartOfDay ? config.getString("scheduler.forced-work.cron")
-								: config.getString("scheduler.start-work.cron"));
-				log.info("Trading will start at " + expression.getNextValidTimeAfter(new Date()));
-			} catch (Exception e) {
-				log.info("Something went wrong while parsing cron expression. I will not say when trading will start");
-			}
-		}, DateTime.now().plusSeconds(15).toDate());
-	}
+    @Scheduled(cron = "${oandabot.scheduler.end-work.cron}")
+    public void tgiFriday() {
+        if (actorSystem == null) return;
 
-	@Scheduled(cron = "${main.scheduler.forced-work.cron}")
-	public void forceStart() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		if (forceStartOfDay) {
-			forceStartOfDay = false;
-			startWorkEveryDay();
-		}
-	}
-
-	@Scheduled(cron = "${main.scheduler.news-check.cron}")
-	public void checkNews() {
-		if (!active || actorSystem == null) {
-			return;
-		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.NEWSCHECK).tell(Event.WORK,
-				actorSystem.guardian());
-	}
-
-	private boolean isNotFalse(String path) {
-		return !config.hasPath(path) || config.getBoolean(path);
-	}
-
-	private boolean isTrue(String path) {
-		return config.hasPath(path) && config.getBoolean(path);
-	}
-
-	public void resetState() {
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.TRADE_CLOSED,
-				actorSystem.guardian());
-	}
-
-	@Scheduled(cron = "${main.scheduler.start-work.cron}")
-	public void startWorkEveryDay() {
-		// Start work
-		if (!active || actorSystem == null) {
-			return;
-		}
-		fireCollectPivot();
-		checkNews();
-		taskScheduler.schedule(() -> actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.WORK,
-                actorSystem.guardian()), DateTime.now().plusSeconds(15).toDate());
-	}
-
-	@Scheduled(cron = "${main.scheduler.end-work.cron}")
-	public void tgiFriday() {
-		// End work
-		if (!active || actorSystem == null) {
-			return;
-		}
-		actorSystem.actorSelection(Constants.ACTOR_PATH_HEAD + "*/" + Constants.STRATEGY).tell(Event.TGI_FRIDAY,
-				actorSystem.guardian());
-	}
-
-	@Scheduled(cron = "${main.scheduler.update-balance.cron}")
-	public void updateAccountBalance() {
-		Accounts.Account account = accountService.getAccountDetails().getAccount();
-		mainDao.insertBalance(account.getId(), account.getCurrency(), account.getBalance());
-	}
+        actorSystem.actorSelection(ActorConfig.ACTOR_PATH_HEAD + "*/*").tell(new Messages.WorkTime(false), actorSystem.guardian());
+    }
 }
