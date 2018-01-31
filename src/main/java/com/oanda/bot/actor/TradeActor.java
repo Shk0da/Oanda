@@ -154,7 +154,7 @@ public class TradeActor extends UntypedAbstractActor {
     @Async
     protected void checkProfit() {
         double profit = Precision.round(getProfit(), 5);
-        if (profit >= satisfactorilyProfit) {
+        if (profit >= getSatisfactorilyProfit()) {
             toTakeProfit(profit);
             return;
         }
@@ -340,6 +340,11 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         return profit;
+    }
+
+    private Double getSatisfactorilyProfit() {
+        double balance = accountService.getAccountDetails().getBalance();
+        return (balance / 100 * satisfactorilyProfit) * (balanceRisk * 0.01);
     }
 
     private Integer getMaxUnits(OrderType type) {
