@@ -348,7 +348,7 @@ public class TradeActor extends UntypedAbstractActor {
 
     private Integer getMaxUnits(OrderType type) {
         double balance = accountService.getAccountDetails().getBalance();
-        int units = (int) (balance / getOrderPrice(type) / balanceRisk);
+        int units = (int) (balance / getOrderPrice(type) * (balanceRisk * 0.01));
         if (martingaleEnable && lastProfit < 0) {
             units = units * 2;
         }
