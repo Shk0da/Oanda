@@ -343,13 +343,12 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private Double getSatisfactorilyProfit() {
-        double balance = accountService.getAccountDetails().getBalance();
-        return (balance / 100 * satisfactorilyProfit) * (balanceRisk * 0.01);
+        return accountService.getAccountDetails().getBalance() / 100 * satisfactorilyProfit;
     }
 
     private Integer getMaxUnits(OrderType type) {
         double balance = accountService.getAccountDetails().getBalance();
-        int units = (int) (balance / 100 * (1000 * balanceRisk)) / 10;
+        int units = (int) (balance / getOrderPrice(type) * (balanceRisk * 0.01));
         if (martingaleEnable && lastProfit < 0) {
             units = units * 2;
         }

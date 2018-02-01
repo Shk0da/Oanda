@@ -36,7 +36,7 @@ public class Instrument {
 	}
 
 	public double getPip() {
-		return Math.pow(10, pipLocation);
+		return Math.pow(10, pipLocation) / 10;
 	}
 
 	public double getMaxTradeUnits() {
