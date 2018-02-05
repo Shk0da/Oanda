@@ -2,6 +2,7 @@ package com.oanda.bot.actor;
 
 import akka.actor.UntypedAbstractActor;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.oanda.bot.config.ActorConfig;
 import com.oanda.bot.domain.*;
 import com.oanda.bot.repository.CandleRepository;
@@ -119,7 +120,7 @@ public class TradeActor extends UntypedAbstractActor {
         try {
             if (message instanceof Messages.WorkTime) {
                 setWorkTime(((Messages.WorkTime) message).getIs());
-                log.info("Now workTime is {}", isWorkTime());
+                log.warn("Now workTime is {}", isWorkTime());
             }
 
             if (!isActive()) return;
@@ -408,39 +409,29 @@ public class TradeActor extends UntypedAbstractActor {
         }
 
         List<Candle> hourCandles = candleRepository.getLastCandles(instrument, Step.H1, 127);
-        double[] inHigh = new double[hourCandles.size()];
-        double[] inLow = new double[hourCandles.size()];
         double[] inClose = new double[hourCandles.size()];
         for (int i = 0; i < hourCandles.size(); i++) {
-            Candle candle = hourCandles.get(i);
-            inHigh[i] = candle.getHighMid();
-            inLow[i] = candle.getLowMid();
-            inClose[i] = candle.getCloseMid();
+            inClose[i] = hourCandles.get(i).getCloseMid();
         }
 
         double price = accountService.getPrice(instrument).getAsk();
         double white = movingAverageWhite(inClose);
         double black = movingAverageBlack(inClose);
 
-        boolean trend = true;
-        if (additionalFiltersAdxEnable) {
-            double adx = adx(inClose, inLow, inHigh);
-            trend = adx >= 20;
-        }
-
         Signal signal = Signal.NONE;
         boolean maDown = black > white && price < white;
-        if (Signal.DOWN.equals(predictPrice) && trend && maDown) {
+        if (Signal.DOWN.equals(predictPrice) && maDown) {
             signal = Signal.DOWN;
         }
 
         boolean maUp = white > black && price > white;
-        if (Signal.UP.equals(predictPrice) && trend && maUp) {
+        if (Signal.UP.equals(predictPrice) && maUp) {
             signal = Signal.UP;
         }
 
-        if (((black > white && price < black && price > white) || (white > black && price > black && price < white)) && trend) {
-            List<Candle> currentCandles = candleRepository.getLastCandles(instrument, step, 127);
+        List<Candle> currentCandles = Lists.newArrayList();
+        if ((black > white && price < black && price > white) || (white > black && price > black && price < white)) {
+            currentCandles = candleRepository.getLastCandles(instrument, step, 127);
             double[] inCloseCurrent = new double[currentCandles.size()];
             for (int i = 0; i < currentCandles.size(); i++) {
                 inCloseCurrent[i] = currentCandles.get(i).getCloseMid();
@@ -457,8 +448,28 @@ public class TradeActor extends UntypedAbstractActor {
                 signal = Signal.DOWN;
             }
         }
+        
+        boolean trend = true;
+        if (additionalFiltersAdxEnable) {
+        	if (currentCandles.isEmpty()) {
+        		currentCandles = candleRepository.getLastCandles(instrument, step, 127);
+        	}
+        	
+        	double[] inCloseCurrent = new double[currentCandles.size()];
+        	double[] inHighCurrent = new double[currentCandles.size()];
+        	double[] inLowCurrent = new double[currentCandles.size()];
+            for (int i = 0; i < currentCandles.size(); i++) {
+            	Candle candle = currentCandles.get(i);
+                inCloseCurrent[i] = candle.getCloseMid();
+                inLowCurrent[i] = candle.getLowMid();
+                inHighCurrent[i] = candle.getHighMid();
+            }
+        	
+            double adx = adx(inCloseCurrent, inLowCurrent, inHighCurrent);
+            trend = adx >= 20;
+        }
 
-        return signal;
+        return trend ? signal : Signal.NONE;
     }
 
     private double adx(double[] inClose, double[] inLow, double[] inHigh) {
@@ -511,7 +522,8 @@ public class TradeActor extends UntypedAbstractActor {
     }
 
     private Boolean isActive() {
+    	if (!isWorkTime()) return false;
         double accountBalance = accountService.getAccountDetails().getBalance();
-        return isWorkTime() && (accountBalance > balanceLimit);
+        return accountBalance > balanceLimit;
     }
 }
