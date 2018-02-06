@@ -241,45 +241,48 @@ public class TradeActor extends UntypedAbstractActor {
 			return;
 		}
 
-		Price price = accountService.getPrice(instrument);
-		if (price.getSpread() <= spreadMax * instrument.getPip()) {
-			Order newOrder = getCurrentOrder();
-			if (Signal.UP.equals(signal)) {
-				if (takeProfitEnable) {
-					newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
-				}
+		double currentSpread = Precision.round(accountService.getPrice(instrument).getSpread(), 5);
+		double maxSpread = Precision.round(spreadMax * instrument.getPip(), 5);
+		log.info("Spread {}: {}. Max spread: {}", instrument.getDisplayName(), currentSpread, maxSpread);
+		if (currentSpread > maxSpread)
+			return;
 
-				if (stopLossEnable) {
-					newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
-				}
-
-				if (priceboundEnable) {
-					newOrder.setPrice(getOrderPrice(OrderType.BUY));
-					newOrder.setPriceBound(getOrderPrice(OrderType.BUY));
-				}
-
-				newOrder.setUnits(getMaxUnits(OrderType.BUY));
+		Order newOrder = getCurrentOrder();
+		if (Signal.UP.equals(signal)) {
+			if (takeProfitEnable) {
+				newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
 			}
 
-			if (Signal.DOWN.equals(signal)) {
-				if (takeProfitEnable) {
-					newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
-				}
-
-				if (stopLossEnable) {
-					newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
-				}
-
-				if (priceboundEnable) {
-					newOrder.setPrice(getOrderPrice(OrderType.SELL));
-					newOrder.setPriceBound(getOrderPrice(OrderType.SELL));
-				}
-
-				newOrder.setUnits(getMaxUnits(OrderType.SELL));
+			if (stopLossEnable) {
+				newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
 			}
 
-			sendOrder(newOrder);
+			if (priceboundEnable) {
+				newOrder.setPrice(getOrderPrice(OrderType.BUY));
+				newOrder.setPriceBound(getOrderPrice(OrderType.BUY));
+			}
+
+			newOrder.setUnits(getMaxUnits(OrderType.BUY));
 		}
+
+		if (Signal.DOWN.equals(signal)) {
+			if (takeProfitEnable) {
+				newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
+			}
+
+			if (stopLossEnable) {
+				newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
+			}
+
+			if (priceboundEnable) {
+				newOrder.setPrice(getOrderPrice(OrderType.SELL));
+				newOrder.setPriceBound(getOrderPrice(OrderType.SELL));
+			}
+
+			newOrder.setUnits(getMaxUnits(OrderType.SELL));
+		}
+
+		sendOrder(newOrder);
 	}
 
 	private void sendOrder(Order order) {
@@ -466,7 +469,7 @@ public class TradeActor extends UntypedAbstractActor {
 		}
 
 		boolean trend = true;
-		if (additionalFiltersAdxEnable) {
+		if (additionalFiltersAdxEnable && !Signal.NONE.equals(signal)) {
 			if (currentCandles.isEmpty()) {
 				currentCandles = candleRepository.getLastCandles(instrument, step, 127);
 			}
@@ -496,7 +499,7 @@ public class TradeActor extends UntypedAbstractActor {
 
 		double adx = 0;
 		if (RetCode.Success.equals(retCodeADX)) {
-			adx = outADX[lengthADX.value - 1];
+			adx = Precision.round(outADX[lengthADX.value - 1], 5);
 		}
 
 		log.info("ADX {}: {}", instrument.getDisplayName(), adx);
@@ -511,7 +514,8 @@ public class TradeActor extends UntypedAbstractActor {
 		MInteger lengthBlackMA = new MInteger();
 		RetCode retCodeBlackMA = talib.trima(0, inClose.length - 1, inClose, blackPeriod, beginBlackMA, lengthBlackMA,
 				outBlackMA);
-		double blackMA = RetCode.Success.equals(retCodeBlackMA) ? outBlackMA[lengthBlackMA.value - 1] : 0;
+		double blackMA = Precision
+				.round(RetCode.Success.equals(retCodeBlackMA) ? outBlackMA[lengthBlackMA.value - 1] : 0, 5);
 
 		log.info("MovingAverageBlack {}: {}", instrument.getDisplayName(), blackMA);
 		return blackMA;
@@ -525,7 +529,8 @@ public class TradeActor extends UntypedAbstractActor {
 		MInteger lengthWhiteMA = new MInteger();
 		RetCode retCodeWhiteMA = talib.trima(0, inClose.length - 1, inClose, whitePeriod, beginWhiteMA, lengthWhiteMA,
 				outWhiteMA);
-		double whiteMA = RetCode.Success.equals(retCodeWhiteMA) ? outWhiteMA[lengthWhiteMA.value - 1] : 0;
+		double whiteMA = Precision
+				.round(RetCode.Success.equals(retCodeWhiteMA) ? outWhiteMA[lengthWhiteMA.value - 1] : 0, 5);
 
 		log.info("MovingAverageWhite {}: {}", instrument.getDisplayName(), whiteMA);
 		return whiteMA;
