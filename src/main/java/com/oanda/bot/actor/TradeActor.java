@@ -241,45 +241,48 @@ public class TradeActor extends UntypedAbstractActor {
 			return;
 		}
 
-		Price price = accountService.getPrice(instrument);
-		if (price.getSpread() <= spreadMax * instrument.getPip()) {
-			Order newOrder = getCurrentOrder();
-			if (Signal.UP.equals(signal)) {
-				if (takeProfitEnable) {
-					newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
-				}
+		double currentSpread = accountService.getPrice(instrument).getSpread();
+		double maxSpread = spreadMax * instrument.getPip();
+		log.info("Spread {}: {}. Max spread: ", instrument.getDisplayName(), currentSpread, maxSpread);
+		if (currentSpread > maxSpread)
+			return;
 
-				if (stopLossEnable) {
-					newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
-				}
-
-				if (priceboundEnable) {
-					newOrder.setPrice(getOrderPrice(OrderType.BUY));
-					newOrder.setPriceBound(getOrderPrice(OrderType.BUY));
-				}
-
-				newOrder.setUnits(getMaxUnits(OrderType.BUY));
+		Order newOrder = getCurrentOrder();
+		if (Signal.UP.equals(signal)) {
+			if (takeProfitEnable) {
+				newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.BUY)));
 			}
 
-			if (Signal.DOWN.equals(signal)) {
-				if (takeProfitEnable) {
-					newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
-				}
-
-				if (stopLossEnable) {
-					newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
-				}
-
-				if (priceboundEnable) {
-					newOrder.setPrice(getOrderPrice(OrderType.SELL));
-					newOrder.setPriceBound(getOrderPrice(OrderType.SELL));
-				}
-
-				newOrder.setUnits(getMaxUnits(OrderType.SELL));
+			if (stopLossEnable) {
+				newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.BUY)));
 			}
 
-			sendOrder(newOrder);
+			if (priceboundEnable) {
+				newOrder.setPrice(getOrderPrice(OrderType.BUY));
+				newOrder.setPriceBound(getOrderPrice(OrderType.BUY));
+			}
+
+			newOrder.setUnits(getMaxUnits(OrderType.BUY));
 		}
+
+		if (Signal.DOWN.equals(signal)) {
+			if (takeProfitEnable) {
+				newOrder.setTakeProfitOnFill(new Order.Details(getTakeProfit(OrderType.SELL)));
+			}
+
+			if (stopLossEnable) {
+				newOrder.setStopLossOnFill(new Order.Details(getStopLoss(OrderType.SELL)));
+			}
+
+			if (priceboundEnable) {
+				newOrder.setPrice(getOrderPrice(OrderType.SELL));
+				newOrder.setPriceBound(getOrderPrice(OrderType.SELL));
+			}
+
+			newOrder.setUnits(getMaxUnits(OrderType.SELL));
+		}
+
+		sendOrder(newOrder);
 	}
 
 	private void sendOrder(Order order) {
