@@ -241,8 +241,8 @@ public class TradeActor extends UntypedAbstractActor {
 			return;
 		}
 
-		double currentSpread = accountService.getPrice(instrument).getSpread();
-		double maxSpread = spreadMax * instrument.getPip();
+		double currentSpread = Precision.round(accountService.getPrice(instrument).getSpread(), 5);
+		double maxSpread = Precision.round(spreadMax * instrument.getPip(), 5);
 		log.info("Spread {}: {}. Max spread: {}", instrument.getDisplayName(), currentSpread, maxSpread);
 		if (currentSpread > maxSpread)
 			return;
@@ -469,7 +469,7 @@ public class TradeActor extends UntypedAbstractActor {
 		}
 
 		boolean trend = true;
-		if (additionalFiltersAdxEnable) {
+		if (additionalFiltersAdxEnable && !Signal.NONE.equals(signal)) {
 			if (currentCandles.isEmpty()) {
 				currentCandles = candleRepository.getLastCandles(instrument, step, 127);
 			}
@@ -499,7 +499,7 @@ public class TradeActor extends UntypedAbstractActor {
 
 		double adx = 0;
 		if (RetCode.Success.equals(retCodeADX)) {
-			adx = outADX[lengthADX.value - 1];
+			adx = Precision.round(outADX[lengthADX.value - 1], 5);
 		}
 
 		log.info("ADX {}: {}", instrument.getDisplayName(), adx);
@@ -514,7 +514,8 @@ public class TradeActor extends UntypedAbstractActor {
 		MInteger lengthBlackMA = new MInteger();
 		RetCode retCodeBlackMA = talib.trima(0, inClose.length - 1, inClose, blackPeriod, beginBlackMA, lengthBlackMA,
 				outBlackMA);
-		double blackMA = RetCode.Success.equals(retCodeBlackMA) ? outBlackMA[lengthBlackMA.value - 1] : 0;
+		double blackMA = Precision
+				.round(RetCode.Success.equals(retCodeBlackMA) ? outBlackMA[lengthBlackMA.value - 1] : 0, 5);
 
 		log.info("MovingAverageBlack {}: {}", instrument.getDisplayName(), blackMA);
 		return blackMA;
@@ -528,7 +529,8 @@ public class TradeActor extends UntypedAbstractActor {
 		MInteger lengthWhiteMA = new MInteger();
 		RetCode retCodeWhiteMA = talib.trima(0, inClose.length - 1, inClose, whitePeriod, beginWhiteMA, lengthWhiteMA,
 				outWhiteMA);
-		double whiteMA = RetCode.Success.equals(retCodeWhiteMA) ? outWhiteMA[lengthWhiteMA.value - 1] : 0;
+		double whiteMA = Precision
+				.round(RetCode.Success.equals(retCodeWhiteMA) ? outWhiteMA[lengthWhiteMA.value - 1] : 0, 5);
 
 		log.info("MovingAverageWhite {}: {}", instrument.getDisplayName(), whiteMA);
 		return whiteMA;
