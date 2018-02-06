@@ -243,7 +243,7 @@ public class TradeActor extends UntypedAbstractActor {
 
 		double currentSpread = accountService.getPrice(instrument).getSpread();
 		double maxSpread = spreadMax * instrument.getPip();
-		log.info("Spread {}: {}. Max spread: ", instrument.getDisplayName(), currentSpread, maxSpread);
+		log.info("Spread {}: {}. Max spread: {}", instrument.getDisplayName(), currentSpread, maxSpread);
 		if (currentSpread > maxSpread)
 			return;
 
