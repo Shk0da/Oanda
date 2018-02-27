@@ -131,9 +131,9 @@ public class LearnActor extends UntypedAbstractActor {
             if (lastPredict > 0) {
                 int trend = 0;
                 int checkCount = (int) (sensitivityTrend * 100);
-                if (lastPredicts.size() > checkCount) {
-                    double valPrev = 0;
-                    for (int i = lastPredicts.size() - 1; i > lastPredicts.size() - checkCount; i--) {
+                if (lastPredicts.size() > checkCount + 1) {
+                    double valPrev = lastPredicts.get(lastPredicts.size() - checkCount - 1);
+                    for (int i = lastPredicts.size() - checkCount; i < lastPredicts.size(); i++) {
                         double val = lastPredicts.get(i);
                         if (val > valPrev) trend++;
                         if (val < valPrev) trend--;
