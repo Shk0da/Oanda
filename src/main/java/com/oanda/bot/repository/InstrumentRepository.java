@@ -16,7 +16,7 @@ public class InstrumentRepository {
     private final Map<String, Instrument> instruments = Maps.newHashMap();
 
     @Autowired
-    AccountService accountService;
+    private AccountService accountService;
 
     public Instrument getInstrument(String instrument) {
         Instrument result = instruments.get(instrument);
