@@ -12,7 +12,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 @Slf4j
@@ -26,7 +25,7 @@ public class CSVUtil {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss.SSSZ");
         StringBuilder stringBuilder = new StringBuilder();
         candles.forEach(candle -> {
-            stringBuilder.append(simpleDateFormat.format(candle.getTime()));
+            stringBuilder.append(simpleDateFormat.format(candle.getTime().toDate()));
             stringBuilder.append(separator);
             stringBuilder.append(candle.getOpenMid());
             stringBuilder.append(separator);

@@ -186,7 +186,7 @@ public class LearnActor extends UntypedAbstractActor {
                     log.info("The model is saved to disk: {}", filePath);
                     CSVUtil.saveCandles(candles, filePath + "Data");
                     log.info("The data is saved to disk also");
-                } catch (IOException ex) {
+                } catch (Exception ex) {
                     log.error("Failed save to disk {}{}: {}", instrument, step, ex.getMessage());
                 }
             }
