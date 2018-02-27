@@ -83,7 +83,7 @@ public class LearnActor extends UntypedAbstractActor {
     public LearnActor(Instrument instrument, Step step) {
         this.instrument = instrument;
         this.step = step;
-        this.locationToSave = "NeuralNetwork" + instrument + step;
+        this.locationToSave = "NeuralNetwork" + instrument.getName().replaceAll("_", "") + step;
     }
 
     @Override
