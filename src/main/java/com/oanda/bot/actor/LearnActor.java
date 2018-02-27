@@ -54,6 +54,8 @@ public class LearnActor extends UntypedAbstractActor {
     private volatile MultiLayerNetwork neuralNetwork;
     private volatile DateTime lastLearn;
     private volatile Double lastPredict = 0D;
+
+    @Setter
     private volatile List<Double> lastPredicts = Lists.newArrayList();
     private volatile Double lastCandleClose = 0D;
 
@@ -128,9 +130,9 @@ public class LearnActor extends UntypedAbstractActor {
 
         double closePrice = Precision.round(deNormalize(output.getDouble(0), closeMin, closeMax), 5);
         if (closePrice != Double.NaN && closePrice > 0 && closePrice != lastPredict) {
+            int checkCount = (int) (sensitivityTrend * 100);
             if (lastPredict > 0) {
                 int trend = 0;
-                int checkCount = (int) (sensitivityTrend * 100);
                 if (lastPredicts.size() > checkCount + 1) {
                     double valPrev = lastPredicts.get(lastPredicts.size() - checkCount - 1);
                     for (int i = lastPredicts.size() - checkCount; i < lastPredicts.size(); i++) {
@@ -140,9 +142,9 @@ public class LearnActor extends UntypedAbstractActor {
                         valPrev = val;
                     }
                 }
+
                 double spread = last.get(0).getBid().getC() - last.get(0).getAsk().getC();
                 boolean diffMoreSpread = Math.abs(closePrice - lastPredict) > spread;
-
                 if (trend >= checkCount - 1 && closePrice > lastPredict && diffMoreSpread && (closePrice / (lastPredict / 100) - 100) > sensitivityTrend) {
                     signal = Signal.UP;
                 }
@@ -154,6 +156,9 @@ public class LearnActor extends UntypedAbstractActor {
 
             lastPredict = closePrice;
             lastPredicts.add(lastPredict);
+            if (lastPredicts.size() > checkCount * 1.2) {
+                setLastPredicts(lastPredicts.subList(lastPredicts.size() - checkCount, lastPredicts.size()));
+            }
         }
 
         if (!Messages.Predict.Signal.NONE.equals(signal)) {
