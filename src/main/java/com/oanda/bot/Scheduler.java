@@ -36,7 +36,7 @@ public class Scheduler {
 
                     actorSystem
                             .actorSelection(ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument + "_" + step.name())
-                            .tell(Messages.WORK, actorSystem.guardian());
+                            .tell(Messages.LEARN, actorSystem.guardian());
                 })
         );
     }

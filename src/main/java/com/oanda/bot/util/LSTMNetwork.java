@@ -1,6 +1,7 @@
 package com.oanda.bot.util;
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
+import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
@@ -14,76 +15,69 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-
 public class LSTMNetwork {
 
-    private static final double learningRate = 0.0001;
+    private static final double learningRate = 0.05;
     private static final int iterations = 1;
-    private static final long seed = 777L;
+    private static final int seed = 777;
 
-    private static final int lstmLayer1Size = 120;
-    private static final int lstmLayer2Size = 40;
-    private static final int denseLayerSize = 5;
-    private static final double dropoutRatio = 0.5; //0.5
+    private static final int lstmLayer1Size = 256;
+    private static final int lstmLayer2Size = 256;
+    private static final int denseLayerSize = 32;
+    private static final double dropoutRatio = 0.2;
+    private static final int truncatedBPTTLength = 22;
 
     public static MultiLayerNetwork buildLstmNetworks(DataSetIterator iterator) {
-        int layer = 0;
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(seed)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .iterations(iterations)
-                .weightInit(WeightInit.XAVIER)
-                .updater(Updater.ADAM)
                 .learningRate(learningRate)
-                .l2(0.001)
+                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .weightInit(WeightInit.XAVIER)
+                .updater(Updater.RMSPROP)
                 .regularization(true)
+                .l2(1e-4)
                 .list()
-                .layer(layer++, new GravesLSTM.Builder()
+                .layer(0, new GravesLSTM.Builder()
                         .nIn(iterator.inputColumns())
                         .nOut(lstmLayer1Size)
-                        .activation(Activation.TANH) //TANH
-                        .gateActivationFunction(Activation.HARDSIGMOID) //HARDSIGMOID
+                        .activation(Activation.TANH)
+                        .gateActivationFunction(Activation.HARDSIGMOID)
                         .dropOut(dropoutRatio)
-                        .updater(Updater.RMSPROP) //-
                         .build())
-                .layer(layer++, new GravesLSTM.Builder()
+                .layer(1, new GravesLSTM.Builder()
                         .nIn(lstmLayer1Size)
                         .nOut(lstmLayer2Size)
-                        .activation(Activation.HARDTANH) //TANH
-                        .gateActivationFunction(Activation.HARDSIGMOID) //HARDSIGMOID
+                        .activation(Activation.TANH)
+                        .gateActivationFunction(Activation.HARDSIGMOID)
                         .dropOut(dropoutRatio)
-                        .updater(Updater.RMSPROP) //-
                         .build())
-                .layer(layer++, new DenseLayer.Builder()
+                .layer(2, new DenseLayer.Builder()
                         .nIn(lstmLayer2Size)
                         .nOut(denseLayerSize)
-                        .activation(Activation.RELU) //RELU
-                        .updater(Updater.RMSPROP) //-
+                        .activation(Activation.RELU)
                         .build())
-                .layer(layer++, new RnnOutputLayer.Builder()
+                .layer(3, new RnnOutputLayer.Builder()
                         .nIn(denseLayerSize)
                         .nOut(iterator.totalOutcomes())
-                        .activation(Activation.IDENTITY) //IDENTITY
-                        .lossFunction(LossFunctions.LossFunction.MSE) //MSE
-                        .updater(Updater.RMSPROP) //-
+                        .activation(Activation.IDENTITY)
+                        .lossFunction(LossFunctions.LossFunction.MSE)
                         .build())
+                .backpropType(BackpropType.TruncatedBPTT)
+                .tBPTTForwardLength(truncatedBPTTLength)
+                .tBPTTBackwardLength(truncatedBPTTLength)
                 .pretrain(false)
                 .backprop(true)
                 .build();
 
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
         net.init();
-        net.setListeners(new ScoreIterationListener(1));
+        net.setListeners(new ScoreIterationListener(100));
 
-        int epochs = 10_000; // training epochs
-        for (int epoch = 0; epoch < epochs; epoch++) {
-            while (iterator.hasNext()) {
-                // fit model using mini-batch data
-                net.fit(iterator.next());
-            }
-            // reset iterator
-            iterator.reset();
-            net.rnnClearPreviousState();
+        for (int i = 0; i < 100; i++) {
+            while (iterator.hasNext()) net.fit(iterator.next()); // fit model using mini-batch data
+            iterator.reset(); // reset iterator
+            net.rnnClearPreviousState(); // clear previous state
         }
 
         return net;
