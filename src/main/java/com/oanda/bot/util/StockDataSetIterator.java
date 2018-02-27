@@ -1,6 +1,5 @@
 package com.oanda.bot.util;
 
-import com.google.common.collect.Lists;
 import com.oanda.bot.domain.Candle;
 import lombok.Getter;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -10,6 +9,7 @@ import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.primitives.Pair;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -17,9 +17,8 @@ import java.util.NoSuchElementException;
 public class StockDataSetIterator implements DataSetIterator {
 
     public static final int VECTOR_SIZE = 5;
-
-    private int miniBatchSize;
-    private int exampleLength;
+    public static final int LENGTH = 22;
+    public static final int MINI_BATCH_SIZE = 32;
 
     @Getter
     private double openMin = Double.MAX_VALUE;
@@ -43,21 +42,17 @@ public class StockDataSetIterator implements DataSetIterator {
     private double volumeMax = Double.MIN_VALUE;
 
     private LinkedList<Integer> exampleStartOffsets = new LinkedList<>();
+    private DataSetPreProcessor dataSetPreProcessor;
 
     @Getter
     private List<Candle> train;
     @Getter
     private List<Pair<INDArray, Double>> test;
 
-    public StockDataSetIterator(List<Candle> stockDataList, int miniBatchSize, double splitRatio) {
-        this.miniBatchSize = miniBatchSize;
-        this.exampleLength = stockDataList.size();
+    public StockDataSetIterator(List<Candle> stockDataList, double splitRatio) {
         int split = (int) Math.round(stockDataList.size() * splitRatio);
-        train = stockDataList.subList(0, split);
 
-        for (int i = 0; i < stockDataList.size(); i++) {
-            Candle candle = stockDataList.get(i);
-
+        stockDataList.forEach(candle -> {
             openMin = (candle.getOpenMid() < openMin) ? candle.getOpenMid() : openMin;
             openMax = (candle.getOpenMid() > openMax) ? candle.getOpenMid() : openMax;
 
@@ -72,17 +67,18 @@ public class StockDataSetIterator implements DataSetIterator {
 
             volumeMin = (candle.getVolume() < volumeMin) ? candle.getVolume() : volumeMin;
             volumeMax = (candle.getVolume() > volumeMax) ? candle.getVolume() : volumeMax;
-        }
+        });
 
+        train = stockDataList.subList(0, split);
         test = generateTestDataSet(stockDataList.subList(split, stockDataList.size()));
+
         initializeOffsets();
     }
 
     private void initializeOffsets() {
         exampleStartOffsets.clear();
-        int window = exampleLength + 1;
+        int window = LENGTH + 1;
         for (int i = 0; i < train.size() - window; i++) {
-            if (i < 64) continue;
             exampleStartOffsets.add(i);
         }
     }
@@ -92,29 +88,29 @@ public class StockDataSetIterator implements DataSetIterator {
         if (exampleStartOffsets.size() == 0) throw new NoSuchElementException();
         int actualMiniBatchSize = Math.min(num, exampleStartOffsets.size());
 
-        INDArray input = Nd4j.create(new int[]{actualMiniBatchSize, VECTOR_SIZE, exampleLength}, 'f');
-        INDArray label = Nd4j.create(new int[]{actualMiniBatchSize, 1, exampleLength}, 'f');
+        INDArray input = Nd4j.create(new int[]{actualMiniBatchSize, VECTOR_SIZE, LENGTH}, 'f');
+        INDArray label = Nd4j.create(new int[]{actualMiniBatchSize, 1, LENGTH}, 'f');
         for (int index = 0; index < actualMiniBatchSize; index++) {
-            int startIdx = exampleStartOffsets.removeFirst();
-            int endIdx = startIdx + exampleLength;
-            for (int i = startIdx; i < endIdx - 5; i = i + VECTOR_SIZE) {
+            int startIdx = exampleStartOffsets.removeFirst() + VECTOR_SIZE;
+            int endIdx = startIdx + LENGTH - VECTOR_SIZE;
+            for (int i = startIdx; i < endIdx; i++) {
                 int c = i - startIdx;
-                input.putScalar(new int[]{index, 0, c}, normalize(train.get(startIdx - 5).getCloseMid(), openMin, openMax));
-                input.putScalar(new int[]{index, 1, c}, normalize(train.get(startIdx - 4).getCloseMid(), openMin, openMax));
-                input.putScalar(new int[]{index, 2, c}, normalize(train.get(startIdx - 3).getCloseMid(), openMin, openMax));
-                input.putScalar(new int[]{index, 3, c}, normalize(train.get(startIdx - 2).getCloseMid(), openMin, openMax));
-                input.putScalar(new int[]{index, 4, c}, normalize(train.get(startIdx - 1).getCloseMid(), openMin, openMax));
-
-                label.putScalar(new int[]{index, 0, c}, normalize(train.get(startIdx + 5).getCloseMid(), closeMin, closeMax));
+                //input
+                for (int j = VECTOR_SIZE, k = 0; j > 0; j--, k++) {
+                    input.putScalar(new int[]{index, k, c}, normalize(train.get(startIdx - j).getCloseMid(), closeMin, closeMax));
+                }
+                // label
+                label.putScalar(new int[]{index, 0, c}, normalize(train.get(startIdx + 1).getCloseMid(), closeMin, closeMax));
             }
             if (exampleStartOffsets.size() == 0) break;
         }
+
         return new DataSet(input, label);
     }
 
     @Override
     public int totalExamples() {
-        return train.size() - exampleLength - 1;
+        return train.size() - LENGTH - 1;
     }
 
     @Override
@@ -144,7 +140,7 @@ public class StockDataSetIterator implements DataSetIterator {
 
     @Override
     public int batch() {
-        return miniBatchSize;
+        return MINI_BATCH_SIZE;
     }
 
     @Override
@@ -159,17 +155,17 @@ public class StockDataSetIterator implements DataSetIterator {
 
     @Override
     public void setPreProcessor(DataSetPreProcessor dataSetPreProcessor) {
-        throw new UnsupportedOperationException("Not Implemented");
+        this.dataSetPreProcessor = dataSetPreProcessor;
     }
 
     @Override
     public DataSetPreProcessor getPreProcessor() {
-        throw new UnsupportedOperationException("Not Implemented");
+        return dataSetPreProcessor;
     }
 
     @Override
     public List<String> getLabels() {
-        throw new UnsupportedOperationException("Not Implemented");
+        return null;
     }
 
     @Override
@@ -179,22 +175,18 @@ public class StockDataSetIterator implements DataSetIterator {
 
     @Override
     public DataSet next() {
-        return next(miniBatchSize);
+        return next(MINI_BATCH_SIZE);
     }
 
-    public List<Pair<INDArray, Double>> generateTestDataSet(List<Candle> stockDataList) {
-        List<Pair<INDArray, Double>> test = Lists.newArrayList();
-        for (int i = train.size() + VECTOR_SIZE; i < train.size() + stockDataList.size() - 5; i = i + 1) {
+    private List<Pair<INDArray, Double>> generateTestDataSet(List<Candle> stockDataList) {
+        List<Pair<INDArray, Double>> test = new ArrayList<>();
+        for (int i = VECTOR_SIZE; i < stockDataList.size() - 1; i++) {
             INDArray input = Nd4j.create(new int[]{1, VECTOR_SIZE}, 'f');
-            input.putScalar(new int[]{0, 0}, normalize(stockDataList.get(i - train.size() - 5).getCloseMid(), openMin, openMax));
-            input.putScalar(new int[]{0, 1}, normalize(stockDataList.get(i - train.size() - 4).getCloseMid(), openMin, openMax));
-            input.putScalar(new int[]{0, 2}, normalize(stockDataList.get(i - train.size() - 3).getCloseMid(), openMin, openMax));
-            input.putScalar(new int[]{0, 3}, normalize(stockDataList.get(i - train.size() - 2).getCloseMid(), openMin, openMax));
-            input.putScalar(new int[]{0, 4}, normalize(stockDataList.get(i - train.size() - 1).getCloseMid(), openMin, openMax));
-
-            test.add(new Pair<>(input, normalize(stockDataList.get(i - train.size() + 5).getCloseMid(), closeMin, closeMax)));
+            for (int j = VECTOR_SIZE, k = 0; j > 0; j--, k++) {
+                input.putScalar(new int[]{0, k}, normalize(stockDataList.get(i - j).getCloseMid(), closeMin, closeMax));
+            }
+            test.add(new Pair<>(input, stockDataList.get(i).getCloseMid()));
         }
-
         return test;
     }
 

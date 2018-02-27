@@ -14,7 +14,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,9 +27,6 @@ public class ActorConfig {
 
     @Autowired
     private InstrumentRepository instrumentRepository;
-
-    @Value("${oandabot.additionalfilters.enable}")
-    private Boolean additionalFiltersEnable;
 
     @Bean(name = "actorSystem")
     public ActorSystem actorSystem() {
@@ -55,11 +51,6 @@ public class ActorConfig {
                     Step step = Step.valueOf(cfg.getString("step"));
                     system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, step), "CollectorActor_" + instrument + "_" + step.name());
                     log.info("Create: CollectorActor_" + instrument + "_" + step.name());
-
-                    if (additionalFiltersEnable && !Step.H1.equals(step)) {
-                        system.actorOf(Props.create(SpringDIActor.class, CollectorActor.class, instrument, Step.H1), "CollectorActor_" + instrument + "_H1");
-                        log.info("Create: CollectorActor_" + instrument + "_H1");
-                    }
 
                     system.actorOf(Props.create(SpringDIActor.class, TradeActor.class, instrument, step), "TradeActor_" + instrument + "_" + step.name());
                     log.info("Create: TradeActor_" + instrument + "_" + step.name());
