@@ -122,7 +122,7 @@ public class TradeActor extends UntypedAbstractActor {
                 log.info("CurrentRate {}: {}", instrument, getCurrentRate().getCloseMid());
                 getContext().actorSelection(
                         ActorConfig.ACTOR_PATH_HEAD + "LearnActor_" + instrument.getInstrument() + "_" + step.name())
-                        .tell(message, self());
+                        .tell(Messages.PREDICT, self());
             }
 
             if (message instanceof Messages.Predict) {
