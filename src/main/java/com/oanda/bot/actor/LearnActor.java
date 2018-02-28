@@ -112,7 +112,8 @@ public class LearnActor extends UntypedAbstractActor {
         if (last.size() < VECTOR_SIZE) return;
 
         // check new data
-        double vectorClose = last.get(last.size() - 1).getCloseMid();
+        Candle lastCandle = last.get(last.size() - 1);
+        double vectorClose = lastCandle.getCloseMid();
         if (lastCandleClose > 0 && lastCandleClose == vectorClose) return;
         lastCandleClose = vectorClose;
 
@@ -143,7 +144,7 @@ public class LearnActor extends UntypedAbstractActor {
                     }
                 }
 
-                double spread = last.get(0).getBid().getC() - last.get(0).getAsk().getC();
+                double spread = Math.abs(lastCandle.getBid().getC() - lastCandle.getAsk().getC());
                 boolean diffMoreSpread = Math.abs(closePrice - lastPredict) > spread;
                 if (trend >= checkCount - 1 && closePrice > lastPredict && diffMoreSpread && (closePrice / (lastPredict / 100) - 100) > sensitivityTrend) {
                     signal = Signal.UP;
