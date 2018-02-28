@@ -156,7 +156,7 @@ public class LearnActor extends UntypedAbstractActor {
 
             lastPredict = closePrice;
             lastPredicts.add(lastPredict);
-            if (lastPredicts.size() > checkCount * 1.2) {
+            if (lastPredicts.size() > checkCount * 2) {
                 setLastPredicts(lastPredicts.subList(lastPredicts.size() - checkCount, lastPredicts.size()));
             }
         }
